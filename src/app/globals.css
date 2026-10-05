@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* ── Crimson Arena (direction C, user-pinned from the Pinterest moodboard:
+   near-black ground, ONE hot crimson accent for every CTA/price/active
+   state, cyan strictly as a 1px hairline edge, never text or fill.
+   Type: Big Shoulders Display (arena poster), Barlow body, JetBrains Mono
+   for every number. ── */
+@theme {
+  --color-bg: #0d0d10;
+  --color-bg-soft: #121217;
+  --color-surface: #17171d;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-heading: #f4f1f2;
+  --color-text: #c7c4cb;
+  --color-muted: #94909c;
+  --color-accent: #ff2d55;
+  --color-accent-dim: #ff6b85;
+  --color-edge: #3ee6f0;
+
+  --font-display: var(--font-bigshoulders), "Big Shoulders", sans-serif;
+  --font-body: var(--font-barlow), "Barlow", sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+
+  /* theater-dark elevation: soft, offset, blurred — never a hard block */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-md: 0 6px 16px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 16px 36px rgb(0 0 0 / 0.45);
+  --shadow-xl: 0 28px 64px rgb(0 0 0 / 0.5);
+}
+
+html {
+  scroll-behavior: smooth;
+  /* fixed navbar clearance for #anchor jumps */
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* display face never faux-bolds: Big Shoulders carries native weight */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  color: var(--color-heading);
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #0d0d10;
+}
+
+/* browser surfaces carry the design too */
+input,
+textarea,
+select {
+  caret-color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  border: 2px solid var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* arena grain: fixed, never on scrolling containers */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* PC-98 ordered-dither raise: glows step through an ordered-dither mask
+   instead of fading as a smooth gradient (see DESIGN.md "Raised by").
+   3px cells + a 45° Bayer-ish mask + a dispersed low-amplitude falloff
+   keep it a fine ember grain, not a checker wall. */
+.dither-glow {
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(255 45 85 / 0.34) 0%,
+    rgb(255 45 85 / 0.14) 38%,
+    transparent 66%
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+      45deg,
+      #000 0 1.5px,
+      transparent 1.5px 3px
+    ),
+    repeating-linear-gradient(-45deg, #000 0 1.5px, transparent 1.5px 3px);
+  mask-image: repeating-linear-gradient(45deg, #000 0 1.5px, transparent 1.5px 3px),
+    repeating-linear-gradient(-45deg, #000 0 1.5px, transparent 1.5px 3px);
+  -webkit-mask-size: 3px 3px;
+  mask-size: 3px 3px;
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
+}
+
+/* faint arena floor grid (CTA band, quiet regions) */
+.grid-floor {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* hero swap choreography: remount-driven CSS animations (GSAP handles the
+   entrance and scrub; the swap must never depend on a JS tween surviving) */
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes art-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  0% {
+    opacity: 0;
+    transform: rotate(-2deg) translateX(-110%);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-2deg) translateX(110%);
+  }
+}
+
+.deal-in {
+  animation: deal-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.art-in {
+  animation: art-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sweep-run {
+  animation: sweep 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* title ticker */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 46s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track,
+  .deal-in,
+  .art-in,
+  .sweep-run {
+    animation: none !important;
+  }
+  .sweep-run {
+    opacity: 0 !important;
+  }
+}
