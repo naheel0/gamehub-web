@@ -80,7 +80,15 @@ Tool routing (animation-orchestrator):
   renderer, pauses off-view/off-tab, one frame under reduced motion, silent
   skip without WebGL, full dispose on unmount. Lazy client-only.
 - **CSS** — marquee ticker (46s linear, pause on hover), `animate-pulse`
-  live dot, hover states (`transition 150–200ms`).
+  live dot, hover states (`transition 150–200ms`). Featured cards lift
+  (`translate -4px` + accent border + `shadow-xl`) on hover.
+- **Pointer-tracked glow** — the CTA band's `.dither-glow` follows the
+  cursor (mouse-only, rAF-throttled, CSS `translate` transition trails it,
+  parks center on leave, off under reduced motion and on touch).
+- **CountUp** (`ui/CountUp`) — the CTA band's title count ticks up on
+  scroll-in (`useInView` once, easeOutCubic, writes `textContent` — no
+  re-renders). The final value ships in the prerendered HTML; reduced
+  motion and no-JS both stand at the true number.
 
 Reduced motion: GSAP gated by `if (reduce)` + matchMedia (final state ships),
 CSS animations set `animation: none !important` (sweep forced to
@@ -94,19 +102,28 @@ genre counts). Empty state is honest ("catalog did not load — API may be
 starting up"). No invented policies, testimonials, discounts, or links —
 nav and footer are in-page anchors only; the single external link is the
 real GitHub repo. Genre chips are informational tags, not controls (no
-filter route exists).
+filter route exists). Detail page: API 404/400 → real `not-found` ("Not in
+the arena"); transport failure → error boundary that admits the API is
+down — never a fake 404. No buy/cart claims anywhere.
 
 ## Components
 
-`Navbar` (fixed, live-catalog pill) · `Hero` (art layer, dither glow, sweep,
+`Navbar` (fixed, live-catalog pill; anchors stay in-page on `/`, harmless no-ops on detail) · `Hero` (art layer, dither glow, sweep,
 embers, featured card: key-art rail + title/price line + genre + data strip
 with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 "Registry sources") · `Ticker` (all titles,
 `aria-hidden` as decorative repetition) · `FeaturedGrid` (top 6, Reveal
-stagger) · `GenreRail` (counts) · `CtaBand` (grid floor + dither glow) ·
-`Footer` (build-year constant) · `Reveal`, `icons` (Phosphor behind a client
+stagger; optional `heading`/`eyebrow`, reused on the detail page as
+"More from the arena"; cards are `next/link` → `/games/[id]`) ·
+`GenreRail` (counts) · `CtaBand` (grid floor + dither glow) ·
+`Footer` (build-year constant) · `Reveal`, `CountUp`, `icons` (Phosphor behind a client
 boundary — Phosphor calls `createContext`, illegal in Server Components) ·
-`EmberField`.
+`EmberField` · `CtaBand` is a client component (pointer-tracked glow) ·
+`game/ArtGallery` (hero `heroArtUrl` with `onError` fallback to raw API URL;
+thumbnail rail only when `imageUrls.length > 1`, aria-labeled native
+buttons, `selected` state) · `game/Trailer` (facade → click-to-play
+iframe; embed URL regex-swapped to `youtube-nocookie.com`, `autoplay=1`
+only after the click).
 
 ## Registry sources
 
@@ -133,7 +150,21 @@ the **shadcn MCP** (registry view + audit checklist):
 - Font metrics warning: `Big Shoulders` has no fallback-metric override in
   next/font (warning only; font loads, no size-adjust on the fallback).
 
+## Routes
+
+- `/` — static (Revalidate 1h / Expire 1d).
+- `/games/[id]` — `fetchGame` (`'use cache'` + `cacheLife`, same 1h/1d);
+  `generateStaticParams` seeds ids 1–20 from the cached list; unknown ids
+  render via the PPR shell on demand (`dynamicParams` export is rejected by
+  Next 16.4 under `cacheComponents`). Layout: back link → split hero
+  (ArtGallery left; genre eyebrow, `h1`, price/rating/stock rail, spec
+  rows right) → Trailer → Related (`FeaturedGrid` reuse) → Footer.
+  `generateMetadata` sets title/description + OpenGraph art from the same
+  cached fetch.
+- `not-found.tsx` ("Not in the arena") and `games/[id]/error.tsx` (honest
+  API-down boundary) are shared/global.
+
 ## Known ceiling
 
-Featured cards are showcase `article`s with no link — no detail route exists
-in this round. When `/games` and detail land, they become `next/link`.
+- Gallery rail swaps the hero client-side; no deep-linkable image index
+  (no route/query for it) — fine until shareable gallery states matter.

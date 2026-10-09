@@ -16,7 +16,7 @@ Gamers in India browsing for their next game to buy — comparing cover art, rat
 
 ## Product Purpose
 
-Storefront for discovering and buying game keys from the GameHub catalog. This build's scope, user-set: **the landing page and its hero section first** — nothing else ships in this round. Success: a first-time visitor knows what this store is and what to do within one viewport.
+Storefront for discovering and buying game keys from the GameHub catalog. This build's scope, user-set: **the landing page and the product detail page (`/games/[id]`)** — presentation-only detail (no buy/cart this round). Success: a first-time visitor knows what this store is within one viewport, and any catalog card leads to a full spec/trailer/related view of that title.
 
 ## Positioning
 
@@ -31,9 +31,9 @@ The whole real catalog (20 titles) served live from the GameHub API — real gam
 
 ## Capabilities and Constraints
 
-- In scope now: landing page (`/`) with hero, fed by real catalog data.
-- Out of scope this round (user-set): `/games`, product detail, cart, auth, checkout, admin.
-- Data shape (verified): `{success, message, data:{items:[{id, name, genre, platform, price, rating, inStock, trailerUrl, imageUrls[], description}]}}`.
+- In scope now: landing page (`/`) and product detail (`/games/[id]`), both fed by real catalog data.
+- Out of scope this round (user-set): `/games` list route, cart, auth, checkout, admin, buy actions.
+- Data shape (verified): list `GET /api/Games?page&pageSize` → `{success, message, data:{items:[…]}}` envelope; detail `GET /api/Games/{id}` returns the **bare game object** (`{id, name, genre, platform, price, rating, inStock, trailerUrl, imageUrls[], description}`); 99999/0 → 404, "abc" → 400.
 - Prices are `2999.00` style decimals → render as INR (`₹2,999`).
 - Art is Steam CDN (`shared.fastly.steamstatic.com`), hotlinkable, must be allowed in `next.config` image domains.
 - Currency, catalog content, and API availability are backend-owned; the frontend never invents prices, ratings, stock, or claims.
@@ -56,7 +56,7 @@ The whole real catalog (20 titles) served live from the GameHub API — real gam
 1. Real data only — every price, rating, and title comes from the API; if the API is down, say so honestly instead of faking content.
 2. Browse-first: the catalog is the product; the page gets out of its way.
 3. Mobile and desktop both get the full experience — key art and price legible at 375px.
-4. Scope discipline: land the landing page before adding routes.
+4. Scope discipline: only `/` and `/games/[id]` exist; no route ships without real data behind it.
 
 ## Accessibility & Inclusion
 

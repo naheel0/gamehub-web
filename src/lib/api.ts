@@ -66,3 +66,25 @@ export async function fetchAllGames(): Promise<Game[]> {
     return [];
   }
 }
+
+/**
+ * Single title by id, server-only. 404/400 from the API means the title
+ * truly does not exist → null (the page calls notFound()); transport
+ * failures rethrow so the route's error boundary tells the truth instead
+ * of pretending the game was delisted.
+ */
+export async function fetchGame(id: number): Promise<Game | null> {
+  "use cache";
+  cacheLife({ stale: 60, revalidate: 3600, expire: 86_400 });
+  const res = await fetch(`${API_BASE}/api/Games/${id}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) throw new Error(`Game API ${res.status}`);
+  // unlike the list endpoint, the detail endpoint returns the bare game
+  const game = (await res.json()) as Game;
+  if (!game || typeof game.id !== "number" || typeof game.name !== "string") {
+    throw new Error("Game API shape: detail response missing id/name");
+  }
+  return game;
+}

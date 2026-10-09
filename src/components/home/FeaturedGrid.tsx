@@ -1,17 +1,26 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Star } from "@/components/ui/icons";
 import Reveal from "@/components/ui/Reveal";
 import { formatPrice } from "@/lib/format";
 import type { Game } from "@/lib/types";
 
-export default function FeaturedGrid({ games }: { games: Game[] }) {
+export default function FeaturedGrid({
+  games,
+  heading = "Top of the arena",
+  eyebrow = "Highest rated in the live catalog",
+}: {
+  games: Game[];
+  heading?: string;
+  eyebrow?: string;
+}) {
   return (
     <section id="featured" className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-heading pb-6">
         <h2 className="font-display text-[clamp(2.2rem,5vw,3.75rem)] leading-none uppercase">
-          Top of the arena
+          {heading}
         </h2>
-        <p className="text-sm text-muted">Highest rated in the live catalog</p>
+        <p className="text-sm text-muted">{eyebrow}</p>
       </div>
 
       {games.length === 0 ? (
@@ -22,8 +31,9 @@ export default function FeaturedGrid({ games }: { games: Game[] }) {
       ) : (
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((g, i) => (
-            <Reveal key={g.id} delay={i * 0.07} y={30}>
-              <article className="group h-full border border-line bg-surface transition-colors duration-200 hover:border-accent/60">
+            <Reveal key={g.id} delay={i * 0.07} y={30} className="h-full">
+              <Link href={`/games/${g.id}`} className="group block h-full">
+                <article className="h-full border border-line bg-surface transition duration-200 group-hover:-translate-y-1 group-hover:border-accent/60 group-hover:shadow-xl">
                 <div className="relative aspect-video overflow-hidden">
                   {g.imageUrls[0] && (
                     <Image
@@ -56,7 +66,8 @@ export default function FeaturedGrid({ games }: { games: Game[] }) {
                     </span>
                   </div>
                 </div>
-              </article>
+                </article>
+              </Link>
             </Reveal>
           ))}
         </div>

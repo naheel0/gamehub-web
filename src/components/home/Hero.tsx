@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -95,6 +96,13 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
             fill
             sizes="100vw"
             className="art-in object-cover object-center"
+            onError={(e) => {
+              // hashed store_item_assets apps may not serve derived names
+              const t = e.currentTarget;
+              if (t.dataset.fb) return;
+              t.dataset.fb = "1";
+              t.src = game.imageUrls[0];
+            }}
           />
         ) : (
           <div className="grid-floor absolute inset-0" />
@@ -132,7 +140,7 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
         <p data-hero-sub className="mt-6 max-w-[62ch] text-lg text-text sm:text-xl">
           {empty
             ? "The GameHub catalog did not load — the API may be starting up. Give it a moment and refresh."
-            : "Every title, rating and price on this page is served live from the GameHub API — real games, real rupees, no placeholder art."}
+            : "Epic adventures, fierce rivals, and everything in between — your next favorite game is waiting in the arena."}
         </p>
 
         {/* one shared height + one animation unit: staggered per-button tweens
@@ -184,7 +192,12 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
                 {/* title + price share the top line */}
                 <div className="flex items-baseline justify-between gap-3 px-4 pt-4 pb-2.5 sm:px-5">
                   <h2 className="min-w-0 font-display text-xl leading-[0.95] text-balance uppercase sm:text-2xl">
-                    {game.name}
+                    <Link
+                      href={`/games/${game.id}`}
+                      className="transition-colors duration-200 hover:text-accent"
+                    >
+                      {game.name}
+                    </Link>
                   </h2>
                   <span className="shrink-0 font-mono text-lg leading-none font-bold tabular-nums text-accent sm:text-xl">
                     {formatPrice(game.price)}
