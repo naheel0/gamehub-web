@@ -67,6 +67,46 @@ export async function fetchAllGames(): Promise<Game[]> {
   }
 }
 
+/** Catalog query params the live API actually supports (all verified):
+ *  page, pageSize, search, sortBy=name|price|rating, sortOrder, genre. */
+export interface CatalogQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  genre?: string;
+}
+
+/**
+ * Paged/searchable catalog slice, server-only. Builds the query string
+ * from the params the API verifies support, caches each distinct query
+ * for 1h. An out-of-range page returns an honest empty item list (the
+ * page clamps and redirects rather than showing a fake page).
+ */
+export async function fetchGamesPage(q: CatalogQuery): Promise<PagedGames> {
+  "use cache";
+  cacheLife({ stale: 60, revalidate: 3600, expire: 86_400 });
+  const params = new URLSearchParams();
+  if (q.page) params.set("page", String(q.page));
+  if (q.pageSize) params.set("pageSize", String(q.pageSize));
+  if (q.search) params.set("search", q.search);
+  if (q.sortBy) params.set("sortBy", q.sortBy);
+  if (q.sortOrder) params.set("sortOrder", q.sortOrder);
+  if (q.genre) params.set("genre", q.genre);
+  try {
+    const res = await fetch(`${API_BASE}/api/Games?${params}`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`Games API ${res.status}`);
+    const json = (await res.json()) as ApiEnvelope<PagedGames>;
+    return assertPagedGames(json);
+  } catch (err) {
+    console.error("fetchGamesPage failed:", err);
+    return { items: [], totalCount: 0, totalPages: 0 };
+  }
+}
+
 /**
  * Single title by id, server-only. 404/400 from the API means the title
  * truly does not exist → null (the page calls notFound()); transport

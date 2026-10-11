@@ -139,7 +139,7 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
 
         <p data-hero-sub className="mt-6 max-w-[62ch] text-lg text-text sm:text-xl">
           {empty
-            ? "The GameHub catalog did not load — the API may be starting up. Give it a moment and refresh."
+            ? "We couldn't load the catalog right now. Give it a moment and refresh."
             : "Epic adventures, fierce rivals, and everything in between — your next favorite game is waiting in the arena."}
         </p>
 

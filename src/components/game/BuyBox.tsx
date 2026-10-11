@@ -34,7 +34,7 @@ export default function BuyBox({
 
   const gated = () =>
     setNote(
-      "Cart and checkout require a GameHub account — the store API needs you to be signed in. Login is not wired into this site yet.",
+      "Cart and checkout are almost here — accounts open first. Check back shortly to place your order.",
     );
 
   const stars = Math.round(rating);

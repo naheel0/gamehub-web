@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Evaluated once at build time → stable across prerenders.
 const YEAR = new Date().getFullYear();
 
@@ -8,27 +10,27 @@ export default function Footer() {
         <div>
           <p className="font-display text-2xl tracking-wide text-heading uppercase">GameHub</p>
           <p className="mt-3 max-w-[45ch] text-sm text-muted">
-            A game storefront where every title, rating and price is served live from the
-            GameHub API.
+            Discover, compare and buy games — every title, rating and price in rupees.
           </p>
         </div>
 
         <nav aria-label="Footer" className="flex flex-col gap-3 text-sm">
-          <a href="#featured" className="tracking-widest text-muted uppercase hover:text-heading">
+          <Link href="/games" className="tracking-widest text-muted uppercase hover:text-heading">
             Store
-          </a>
-          <a href="#genres" className="tracking-widest text-muted uppercase hover:text-heading">
+          </Link>
+          <Link href="/#genres" className="tracking-widest text-muted uppercase hover:text-heading">
             Genres
-          </a>
-          <a href="#top" className="tracking-widest text-muted uppercase hover:text-heading">
+          </Link>
+          <Link href="#top" className="tracking-widest text-muted uppercase hover:text-heading">
             Back to top
-          </a>
+          </Link>
         </nav>
 
         <div className="text-sm text-muted">
-          <p className="tracking-widest uppercase">Data</p>
+          <p className="tracking-widest uppercase">Legal</p>
           <p className="mt-3 max-w-[40ch]">
-            Catalog from the live GameHub API. Artwork via the Steam CDN.
+            Game titles, ratings and prices are supplied by GameHub. Artwork remains the
+            property of its respective publishers.
           </p>
           <a
             href="https://github.com/naheel0/GameHub-fullstack"

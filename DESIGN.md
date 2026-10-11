@@ -79,9 +79,15 @@ Tool routing (animation-orchestrator):
 - **three.js** — ember field in the hero: 420 additive points, low-power
   renderer, pauses off-view/off-tab, one frame under reduced motion, silent
   skip without WebGL, full dispose on unmount. Lazy client-only.
-- **CSS** — marquee ticker (46s linear, pause on hover), `animate-pulse`
-  live dot, hover states (`transition 150–200ms`). Featured cards lift
-  (`translate -4px` + accent border + `shadow-xl`) on hover.
+- **CSS** — marquee ticker (46s linear, pause on hover), hover states
+  (`transition 150–200ms`). Featured cards lift (`translate -4px` + accent
+  border + `shadow-xl`) on hover.
+- **Tilt** (`ui/Tilt`, GSAP `quickTo`) — pointer-tracked 3D perspective on
+  catalog cards: `rotationX/Y` follow the cursor (clamped ±5°,
+  `transformPerspective: 900`, 0.3s `power2.out`, zero on leave), so the
+  existing hover lift + accent border rides on a live plane. Gated three
+  ways: `useReducedMotion`, `(hover: hover) and (pointer: fine)` media
+  query (touch never gets tilt), and effect-only (no-JS ships flat).
 - **Pointer-tracked glow** — the CTA band's `.dither-glow` follows the
   cursor (mouse-only, rAF-throttled, CSS `translate` transition trails it,
   parks center on leave, off under reduced motion and on touch).
@@ -98,17 +104,21 @@ marquee freezes, three.js renders one frame.
 ## Content rules
 
 Every number comes from the live API (count, prices in `Intl` INR, ratings,
-genre counts). Empty state is honest ("catalog did not load — API may be
-starting up"). No invented policies, testimonials, discounts, or links —
-nav and footer are in-page anchors only; the single external link is the
-real GitHub repo. Genre chips are informational tags, not controls (no
-filter route exists). Detail page: API 404/400 → real `not-found` ("Not in
-the arena"); transport failure → error boundary that admits the API is
-down — never a fake 404. No buy/cart claims anywhere.
+genre counts). Empty and error states are honest but customer-toned ("We
+couldn't load the catalog right now — refresh in a moment"): **customer-facing
+copy never names the backend, API, or missing internals** (user-set,
+production-level rule). No invented policies, testimonials, discounts, or
+links; the single external link is the real GitHub repo. Genre chips on
+`/games` are real controls (URL-backed filter route). Detail page: API
+404/400 → real `not-found` ("Not in the arena"); transport failure → error
+boundary that admits the store is unreachable — never a fake 404. Cart and
+checkout are JWT-gated server-side and no auth exists in this frontend, so
+the buy buttons show an honest on-click notice ("accounts open first") —
+never a fake success.
 
 ## Components
 
-`Navbar` (fixed, live-catalog pill; anchors stay in-page on `/`, harmless no-ops on detail) · `Hero` (art layer, dither glow, sweep,
+`Navbar` (fixed; Store → `/games`, Genres → `/#genres`, logo → `/`) · `Hero` (art layer, dither glow, sweep,
 embers, featured card: key-art rail + title/price line + genre + data strip
 with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 "Registry sources") · `Ticker` (all titles,
@@ -119,11 +129,18 @@ stagger; optional `heading`/`eyebrow`, reused on the detail page as
 `Footer` (build-year constant) · `Reveal`, `CountUp`, `icons` (Phosphor behind a client
 boundary — Phosphor calls `createContext`, illegal in Server Components) ·
 `EmberField` · `CtaBand` is a client component (pointer-tracked glow) ·
-`game/ArtGallery` (hero `heroArtUrl` with `onError` fallback to raw API URL;
-thumbnail rail only when `imageUrls.length > 1`, aria-labeled native
-buttons, `selected` state) · `game/Trailer` (facade → click-to-play
-iframe; embed URL regex-swapped to `youtube-nocookie.com`, `autoplay=1`
-only after the click).
+`game/GameCard` (shared grid card: art with `onError` fallback, genre tag,
+title, rating, INR price; used by `FeaturedGrid` and the catalog grid) ·
+`game/ProductMedia` (stage + trailer/art tile rail; stage swaps are client
+state, `art-in` class reuse; trailer facade → click-to-play
+`youtube-nocookie.com` iframe, `autoplay=1` only after the click) ·
+`game/BuyBox` (price, rating, stock, spec rows, quantity stepper, Add to
+cart + Buy now → honest on-click gate notice, `role="status"`) ·
+`catalog/CatalogToolbar` (client: 300ms-debounced search → `router.replace`,
+genre tabs with accent underline, sort select, `CountUp` on the live count) ·
+`catalog/CatalogPagination` (real `next/link` pages with aria labels) ·
+`ui/Tilt` (pointer-tracked 3D perspective via GSAP `quickTo`, clamped ~5°,
+gated on reduced motion + coarse pointers; wraps catalog cards).
 
 ## Registry sources
 
@@ -156,11 +173,24 @@ the **shadcn MCP** (registry view + audit checklist):
 - `/games/[id]` — `fetchGame` (`'use cache'` + `cacheLife`, same 1h/1d);
   `generateStaticParams` seeds ids 1–20 from the cached list; unknown ids
   render via the PPR shell on demand (`dynamicParams` export is rejected by
-  Next 16.4 under `cacheComponents`). Layout: back link → split hero
-  (ArtGallery left; genre eyebrow, `h1`, price/rating/stock rail, spec
-  rows right) → Trailer → Related (`FeaturedGrid` reuse) → Footer.
+  Next 16.4 under `cacheComponents`). Layout: back link → split e-com body
+  (`ProductMedia` left: stage + trailer/art tile rail; `BuyBox` right:
+  genre eyebrow, `h1`, price, rating/stock, spec rows, quantity, buy
+  actions) → Related (`FeaturedGrid` reuse) → Footer.
   `generateMetadata` sets title/description + OpenGraph art from the same
   cached fetch.
+- `/games` — PPR: static shell (header band with dither glow + sweep)
+  wraps a `<Suspense>` body (`CatalogSkeleton` fallback, `aria-busy`) so
+  `searchParams` never blocks prerender. Body: `fetchGamesPage`
+  (`'use cache'`, `pageSize=12`) with the API's verified params —
+  `page`, `search`, `genre`, `sortBy=name|price|rating`, `sortOrder` —
+  mapped from URL state (`q`, `genre`, `sort`, `page`); all filter state
+  lives in the URL (`router.replace`, scroll preserved). `SORTS`/`sortKeyOf`
+  live in `src/lib/catalog.ts` (shared, outside the client boundary).
+  Out-of-range page (API returns empty items + real totalCount) →
+  `redirect` to page 1 of the same filtered query. Honest empty
+  (catalog down) and no-results (with real total) states; cards wrapped
+  in `Tilt`.
 - `not-found.tsx` ("Not in the arena") and `games/[id]/error.tsx` (honest
   API-down boundary) are shared/global.
 

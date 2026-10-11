@@ -11,8 +11,7 @@ export default function GameError({ reset }: { error: Error & { digest?: string 
       </p>
       <h1 className="mt-3 font-display text-5xl uppercase">The arena went quiet.</h1>
       <p className="mt-4 text-text">
-        The GameHub API did not respond — the catalog service may be starting up.
-        Give it a moment and try again.
+        We couldn&apos;t reach the store just now. Give it a moment and try again.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <button

@@ -61,11 +61,10 @@ export default function CtaBand({ count }: { count: number }) {
           <p className="mx-auto mt-5 max-w-[60ch] text-lg text-text">
             {count > 0 ? (
               <>
-                <CountUp value={count} /> titles, rated and priced in rupees, refreshed from the
-                GameHub API every hour.
+                <CountUp value={count} /> titles, rated and priced in rupees.
               </>
             ) : (
-              "Rated and priced in rupees, refreshed from the GameHub API every hour."
+              "Rated and priced in rupees."
             )}
           </p>
           <a

@@ -26,7 +26,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "GameHub — the whole catalog, live",
   description:
-    "Every GameHub title, rating and INR price served live from the store API. No mock data, no placeholder art.",
+    "Every GameHub title, rating and price in rupees — search, compare and find your next game.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

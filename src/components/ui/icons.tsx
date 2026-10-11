@@ -5,10 +5,14 @@
 export {
   ArrowLeft,
   ArrowRight,
+  CaretLeft,
+  CaretRight,
+  MagnifyingGlass,
   Minus,
   Pause,
   Play,
   Plus,
   ShoppingCartSimple,
   Star,
+  X,
 } from "@phosphor-icons/react";
