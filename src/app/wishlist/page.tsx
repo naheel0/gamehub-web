@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import HeartScene from "@/components/wishlist/HeartScene";
 import WishlistClient from "@/components/wishlist/WishlistClient";
 import { ArrowLeft } from "@/components/ui/icons";
 
@@ -13,8 +12,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Static shell (PPR): poster heading + sticky heart panel render instantly;
- * the list body resolves client-side because wishlist state is per-account.
+ * Static shell (PPR): the poster heading renders instantly; the list body
+ * resolves client-side because wishlist state is per-account.
  */
 export default function WishlistPage() {
   return (
@@ -39,20 +38,8 @@ export default function WishlistPage() {
           </p>
         </header>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
+        <div className="mt-10">
           <WishlistClient />
-
-          {/* panel: slim band on mobile, sticky poster on desktop */}
-          <aside className="relative order-first h-44 overflow-hidden border border-line bg-surface/40 lg:order-none lg:sticky lg:top-24 lg:h-[440px] lg:self-start">
-            <div
-              aria-hidden="true"
-              className="dither-glow pointer-events-none absolute top-1/2 left-1/2 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2 opacity-70"
-            />
-            <HeartScene className="absolute inset-0" />
-            <p className="absolute bottom-4 left-5 font-mono text-[11px] tracking-[0.2em] text-muted uppercase">
-              Saved for the arena
-            </p>
-          </aside>
         </div>
       </main>
       <Footer />

@@ -45,25 +45,33 @@ export function assertPagedGames(json: ApiEnvelope<PagedGames>): PagedGames {
 /**
  * Whole catalog, server-side only (the API sends no CORS headers, so the
  * browser can never fetch it directly). Cached per Cache Components with a
- * 1h lifetime; failures degrade to an empty list so a cold backend cannot
- * fail the build — the page then renders its honest empty state.
+ * 1h lifetime. The cached CORE throws on transport failure — a thrown
+ * result is never cached, so a cold backend cannot poison the catalog with
+ * a fake empty list (that bug served a stale error state for hours). The
+ * uncached wrapper returns null = "down right now": the landing page
+ * degrades with `?? []`, the catalog page shows its honest error state,
+ * and the very next request recovers.
  *
  * Import from server components only: `formatPrice`/`heroArtUrl` live in
  * `./format` for client components.
  */
-export async function fetchAllGames(): Promise<Game[]> {
+async function fetchAllGamesCore(): Promise<Game[]> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 3600, expire: 86_400 });
+  const res = await fetch(`${API_BASE}/api/Games?page=1&pageSize=100`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`Games API ${res.status}`);
+  const json = (await res.json()) as ApiEnvelope<PagedGames>;
+  return assertPagedGames(json).items;
+}
+
+export async function fetchAllGames(): Promise<Game[] | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/Games?page=1&pageSize=100`, {
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`Games API ${res.status}`);
-    const json = (await res.json()) as ApiEnvelope<PagedGames>;
-    return assertPagedGames(json).items;
+    return await fetchAllGamesCore();
   } catch (err) {
     console.error("fetchAllGames failed:", err);
-    return [];
+    return null;
   }
 }
 
@@ -82,9 +90,12 @@ export interface CatalogQuery {
  * Paged/searchable catalog slice, server-only. Builds the query string
  * from the params the API verifies support, caches each distinct query
  * for 1h. An out-of-range page returns an honest empty item list (the
- * page clamps and redirects rather than showing a fake page).
+ * page clamps and redirects rather than showing a fake page). The cached
+ * CORE throws on transport/contract failure (never cached); the uncached
+ * wrapper returns null = "down right now" so the page shows its honest
+ * error state and recovers on the next request.
  */
-export async function fetchGamesPage(q: CatalogQuery): Promise<PagedGames> {
+async function fetchGamesPageCore(q: CatalogQuery): Promise<PagedGames> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 3600, expire: 86_400 });
   const params = new URLSearchParams();
@@ -94,16 +105,20 @@ export async function fetchGamesPage(q: CatalogQuery): Promise<PagedGames> {
   if (q.sortBy) params.set("sortBy", q.sortBy);
   if (q.sortOrder) params.set("sortOrder", q.sortOrder);
   if (q.genre) params.set("genre", q.genre);
+  const res = await fetch(`${API_BASE}/api/Games?${params}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`Games API ${res.status}`);
+  const json = (await res.json()) as ApiEnvelope<PagedGames>;
+  return assertPagedGames(json);
+}
+
+export async function fetchGamesPage(q: CatalogQuery): Promise<PagedGames | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/Games?${params}`, {
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`Games API ${res.status}`);
-    const json = (await res.json()) as ApiEnvelope<PagedGames>;
-    return assertPagedGames(json);
+    return await fetchGamesPageCore(q);
   } catch (err) {
     console.error("fetchGamesPage failed:", err);
-    return { items: [], totalCount: 0, totalPages: 0 };
+    return null;
   }
 }
 

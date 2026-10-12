@@ -14,7 +14,7 @@ type Props = { params: Promise<{ id: string }> };
 /** Prerender the live catalog's ids at build (cached list, one fetch);
  *  titles added later render on demand via dynamicParams. */
 export async function generateStaticParams() {
-  const games = await fetchAllGames();
+  const games = (await fetchAllGames()) ?? [];
   return games.map((g) => ({ id: String(g.id) }));
 }
 
@@ -39,7 +39,7 @@ export default async function GamePage({ params }: Props) {
   const game = await fetchGame(pid);
   if (!game) notFound();
 
-  const all = await fetchAllGames();
+  const all = (await fetchAllGames()) ?? [];
   const related = all
     .filter((g) => g.id !== game.id)
     .sort(

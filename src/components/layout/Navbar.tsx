@@ -15,7 +15,8 @@ import { Heart, List, ShoppingCartSimple, X } from "@/components/ui/icons";
  * badge pop when counts resolve; the drawer rises staggered (open-only —
  * close stays instant rather than pulling in an exit-animation library).
  * Session semantics are unchanged from v2: resolve once after mount,
- * pending = empty slot (never a false "signed out"), cart/wishlist badges
+ * pending = empty slot (never a false "signed out"), the account chip is a
+ * live link to /profile, cart/wishlist badges
  * are live links to /cart and /wishlist (they re-resolve on the
  * `counts:changed` event every mutation announces), drawer keeps
  * Escape/focus-return/Tab cycle/scroll lock/portal. Motion is CSS-only (animation-orchestrator: simple
@@ -243,12 +244,16 @@ export default function Navbar() {
       </Link>
     ) : (
       <span className="flex items-center gap-3">
-        <span className="flex items-center gap-2 border border-line bg-surface px-3 py-1.5">
+        <Link
+          href="/profile"
+          aria-current={pathname === "/profile" ? "page" : undefined}
+          className="flex items-center gap-2 border border-line bg-surface px-3 py-1.5 transition-colors duration-200 hover:border-accent"
+        >
           <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
           <span className="font-display text-xl leading-none tracking-wide text-heading uppercase">
             {session.firstName || "Account"}
           </span>
-        </span>
+        </Link>
         <button
           type="button"
           onClick={() => void signOut()}
@@ -368,12 +373,16 @@ export default function Navbar() {
               </Link>
             ) : (
               <div className="flex items-center justify-between gap-4">
-                <span className="flex items-center gap-2 border border-line bg-surface px-3 py-1.5">
+                <Link
+                  href="/profile"
+                  aria-current={pathname === "/profile" ? "page" : undefined}
+                  className="flex items-center gap-2 border border-line bg-surface px-3 py-1.5 transition-colors duration-200 hover:border-accent"
+                >
                   <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
                   <span className="font-display text-2xl leading-none text-heading uppercase">
                     {session.firstName || "Account"}
                   </span>
-                </span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => void signOut()}

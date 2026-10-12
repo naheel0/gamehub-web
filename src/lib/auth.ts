@@ -217,7 +217,8 @@ export function tryRefresh(refresh: string): Promise<RefreshOutcome> {
 type RelayMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 /**
- * Forward one store call (path under /api/Wishlist or /api/Cart) with the
+ * Forward one signed-in store call (cart, wishlist, profile, addresses,
+ * orders) with the
  * signed-in user's token: one transparent refresh retry on 401 (cookie
  * rotation lands on this response), honest status passthrough otherwise.
  * 401 = genuinely signed out or session dead; 502 = we couldn't reach the

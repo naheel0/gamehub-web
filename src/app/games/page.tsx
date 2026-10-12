@@ -112,7 +112,7 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
   const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 
   const { sortBy, sortOrder } = SORTS[sort];
-  const { items, totalCount } = await fetchGamesPage({
+  const result = await fetchGamesPage({
     page,
     pageSize: PAGE_SIZE,
     search: q || undefined,
@@ -120,6 +120,8 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
     sortBy,
     sortOrder,
   });
+  const items = result?.items ?? [];
+  const totalCount = result?.totalCount ?? 0;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -139,9 +141,10 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
 
   // genre chips come from the real catalog, not a hardcoded list
   const all = await fetchAllGames();
-  const genres = [...new Set(all.map((g) => g.genre))].sort();
+  const genres = all ? [...new Set(all.map((g) => g.genre))].sort() : [];
 
-  const noApiData = all.length === 0;
+  // null = the catalog is down right now (never a cached lie)
+  const down = result === null || all === null;
 
   return (
     <>
@@ -156,8 +159,8 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
         />
       </div>
 
-      {noApiData ? (
-        /* honest empty state — customer tone, no backend internals */
+      {down ? (
+        /* honest error state — customer tone, no backend internals */
         <p className="mt-10 border border-line bg-surface p-6 text-text">
           We couldn&apos;t load the catalog right now. Refresh in a moment and the titles
           will return.
@@ -169,7 +172,7 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
             No games match{q ? ` “${q}”` : " these filters"}
           </p>
           <p className="mt-2 text-sm text-muted">
-            Try a different title, or clear the filters to see all {all.length}.
+            Try a different title, or clear the filters to see all {all?.length ?? 0}.
           </p>
           <Link
             href="/games"

@@ -88,14 +88,15 @@ Tool routing (animation-orchestrator):
   Pointer parallax trails the camera (fine pointers only). Same gates as
   EmberField: reduced motion = one frame at rest, off-view/off-tab = loop
   stops, WebGL failure = page stands without the key.
-- **three.js + GSAP** — the wishlist heart (`wishlist/HeartScene`): a
-  primitive extruded bezier heart (explicit lobe/cleft/point profile — no
-  downloaded asset) with a slow **heartbeat** (scale yoyo through its own
-  `beat` channel, `sine.inOut`, 0.55s + 0.6s hold), entrance drop-in
-  (`expo.out`) composed through `enter.p`, sway + float on the spinner
-  group, pointer parallax trailing the camera. Same gates as EmberField:
-  reduced motion = one frame at rest, off-view/off-tab = loop stops,
-  WebGL failure = glow + caption still carry the panel.
+- **three.js + GSAP** — the cart rail panel (`cart/CartScene`): the CC BY
+  4.0 PS4 DualShock 4 GLB (`public/models/dualshock4.glb`, normalized to a
+  real ~16 cm — the file ships in centimetre units, which would otherwise
+  clip behind the near plane) under the login scene's studio rig with a
+  crimson rim/spill, entrance drop-in (`expo.out`) composed through
+  `enter.p`, idle sway/bob + breathing spill, pointer parallax trailing the
+  camera, drag-to-rotate. Same gates as EmberField: reduced motion = one
+  frame at rest, off-view/off-tab = loop stops, WebGL failure = glow +
+  caption still carry the panel.
 - **CSS** — marquee ticker (46s linear, pause on hover), hover states
   (`transition 150–200ms`). Featured cards lift (`translate -4px` + accent
   border + `shadow-xl`) on hover. Navbar v3 (`badge-pop` on count mount,
@@ -150,7 +151,8 @@ motion moment with the drawer rising staggered (CSS keyframes, open-only —
 close stays instant rather than pulling in an exit-animation library).
 Session-aware chrome over the static shell: account slot + counts resolve
 once after mount via `/api/auth/session` — pending = slot stays EMPTY, never
-a false "signed out". Signed in = crimson dot + first name + Sign out
+a false "signed out". Signed in = crimson dot + first name (the chip is a
+**live link to `/profile`**, `aria-current` when there) + Sign out
 (proxy POST, revokes all backend refresh tokens + access jti, clears local
 cookies regardless). Cart/Wishlist badges are **live links** to `/cart` /
 `/wishlist` (aria-label announces "Cart — 3 items"; `aria-current` when
@@ -180,17 +182,33 @@ actions through the store relay: Add to cart posts real quantity, Buy now
 adds then routes to `/cart`, heart toggles the signed-in wishlist
 (`aria-pressed`, fill = saved); 401 → sign-in gate notice, every mutation
 announces `counts:changed`, `role="status"`) ·
-`wishlist/HeartScene` (primitive extruded bezier heart — no downloaded
-asset: arena-crimson standard material, soft bevel, 7 white tetrahedron
-shards, key/fill/crimson-rim/spill rig; entrance + heartbeat compose
-through separate channels so they never fight, sway + pointer parallax;
-EmberField lifecycle gates: WebGL try/catch, off-view/off-tab pause, one
-frame under reduced motion, full dispose) · `wishlist/WishlistClient`
+`wishlist/WishlistClient`
 (client state machine: skeleton / 401 gate / honest error + retry / empty /
 rows with Move to cart + Remove; `deal-in` row stagger, `role="status"`
-flash line) · `cart/CartClient` (same state machine + sticky Summary,
-1–99 stepper that resyncs from source after a rejected change, honest
-checkout gate note) ·
+flash line; full-width list — the primitive heart panel was removed at the
+user's request) · `cart/CartClient` (same state machine + sticky rail: `CartScene`
+panel over the Summary, 1–99 stepper that resyncs from source after a
+rejected change, honest checkout gate note) · `cart/CartScene` (the CC BY
+4.0 PS4 DualShock 4 GLB by JeppeHove-Nyborg, `public/models/dualshock4.glb`
+— same studio rig as the login DualSense: RoomEnvironment PMREM, white key
++ crimson rim/spill, idle sway/bob + breathing spill + pointer parallax +
+drag-to-rotate; no decal/finish work — the model ships its own materials.
+Lifecycle mirrors `ControllerScene`: WebGL try/catch, off-view/off-tab
+pause, one frame under reduced motion, full dispose; load failure = glow +
+caption only. **Swap point for future models**: update `MODEL_URL` + the
+panel's CC BY caption; uncredited downloads must not ship) · `profile/ProfileClient` (one GET-profile probe gates
+the whole section: skeleton / 401 gate / error + retry; three ARIA tabs —
+Details / Addresses / Orders — panels stay mounted once visited so a
+half-typed address form survives a tab switch; Details = edit form via PUT,
+backend messages surface verbatim, save announces `counts:changed` so the
+navbar chip follows the name) · `profile/AddressBook` (cards with default
+badge, set-default, two-step Remove confirm; one inline form shared by add
++ edit, "set as default" pre-checked when the book is empty — the backend
+doesn't auto-promote a first address; POST appends the returned row, the
+rest update locally) · `profile/OrderHistory` (order cards: short id, date,
+status chip — text always, colour never alone — item lines linked to
+`/games/[id]`, backend-computed subtotal/tax/total, shipping snapshot;
+history rows carry full detail so there's no drill-down) ·
 `catalog/CatalogToolbar` (client: 300ms-debounced search → `router.replace`,
 genre tabs with accent underline, sort select, `CountUp` on the live count) ·
 `catalog/CatalogPagination` (real `next/link` pages with aria labels) ·
@@ -263,8 +281,12 @@ the **shadcn MCP** (registry view + audit checklist):
   lives in the URL (`router.replace`, scroll preserved). `SORTS`/`sortKeyOf`
   live in `src/lib/catalog.ts` (shared, outside the client boundary).
   Out-of-range page (API returns empty items + real totalCount) →
-  `redirect` to page 1 of the same filtered query. Honest empty
-  (catalog down) and no-results (with real total) states; cards wrapped
+  `redirect` to page 1 of the same filtered query. The catalog fetchers'
+  cached core **throws** on transport/contract failure (thrown results are
+  never cached) and an uncached wrapper returns `null`; `/games` renders
+  the honest error state for `null` — a cold backend shows it once and the
+  next request recovers, instead of caching a fake empty catalog.
+  No-results state carries the real total; cards wrapped
   in `Tilt`.
 - `not-found.tsx` ("Not in the arena") and `games/[id]/error.tsx` (honest
   API-down boundary) are shared/global.
@@ -290,11 +312,11 @@ the **shadcn MCP** (registry view + audit checklist):
   call fails.
 - `/wishlist` and `/cart` — static (○) shells: poster heading + panel
   render instantly; the list body resolves client-side because both are
-  per-account. `/wishlist` = heading + `WishlistClient` + sticky
-  `HeartScene` panel (dither glow + caption, `h-44` band above the list on
-  mobile). `/cart` = poster heading band (dither glow + grid floor — the
+  per-account. `/wishlist` = heading + full-width `WishlistClient` (the
+  heart scene panel was removed at the user's request). `/cart` = poster heading band (dither glow + grid floor — the
   panel grammar carried as type: this is the app's most task-focused page)
-  + `CartClient` (list left, sticky Summary right). Five **store relay**
+  + `CartClient` (list left, sticky rail right: `CartScene` DualShock panel
+  + Summary). Five **store relay**
   routes (`/api/wishlist[...]`, `/api/cart[...]`) forward to the backend
   with the httpOnly access token via the shared `relay()` in
   `lib/auth.ts`: one transparent refresh retry on 401, honest status
@@ -306,6 +328,16 @@ the **shadcn MCP** (registry view + audit checklist):
   `counts:changed` (window event) → navbar badges re-resolve. Checkout is
   gated honestly: orders need a saved delivery address, so the button
   states that instead of faking a purchase.
+- `/profile` — static (○) shell: poster heading band (dither glow + grid
+  floor, cart grammar) + `ProfileClient`. Three ARIA tab panels:
+  **Details** (GET/PUT `/api/profile` → `/api/Auth/profile`; envelope
+  `{success, data:{id, firstName, lastName, email, phone, role, status}}`;
+  email conflict → 400 with the backend message surfaced verbatim),
+  **Addresses** (full CRUD + `PUT {id}/default` — the address book checkout
+  was waiting on), **Orders** (`GET /api/Orders` bare array of full
+  `OrderDto`s). Five more relay routes (`/api/profile`, `/api/addresses[...]`,
+  `/api/orders`) on the same `relay()` contract; address paths validated as
+  GUIDs before touching upstream. The navbar account chip links here.
 
 ## Known ceiling
 

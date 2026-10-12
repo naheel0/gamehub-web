@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCartSimple, Trash } from "@/components/ui/icons";
+import CartScene from "@/components/cart/CartScene";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall, type StoreResult } from "@/lib/store";
 import type { CartItem } from "@/lib/types";
 
 /**
  * Cart body: lines with a quantity stepper (1–99, resynced from source on a
- * rejected change), a sticky summary, and an honest checkout gate — the order
- * flow needs a delivery address on file, so the button explains that instead
- * of faking a completed purchase. Counts announce to the navbar.
+ * rejected change), a DualShock panel + sticky summary rail, and an honest
+ * checkout gate — the order flow needs a delivery address on file, so the
+ * button explains that instead of faking a completed purchase. Counts
+ * announce to the navbar.
  */
 type State =
   | { k: "loading" }
@@ -272,37 +274,63 @@ export default function CartClient() {
         </ul>
       </div>
 
-      {/* summary — sticky beside the list on desktop */}
-      <aside className="h-max border border-line bg-surface p-6 lg:sticky lg:top-24">
-        <h2 className="font-display text-2xl uppercase">Summary</h2>
-        <dl className="mt-4 space-y-3 border-b border-line pb-4 font-mono text-sm">
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="tracking-[0.12em] text-muted uppercase">Items</dt>
-            <dd className="tabular-nums text-heading">{totalCount}</dd>
-          </div>
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="tracking-[0.12em] text-muted uppercase">Subtotal</dt>
-            <dd className="text-xl font-bold tabular-nums text-accent">{formatPrice(subtotal)}</dd>
-          </div>
-        </dl>
-
-        <button
-          type="button"
-          onClick={() =>
-            setCheckoutNote(
-              "Checkout needs your delivery address — address and payment aren't live yet. Your cart is saved until then.",
-            )
-          }
-          className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-accent font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
-        >
-          Checkout
-        </button>
-
-        {checkoutNote && (
-          <p role="status" className="mt-4 border-l-2 border-accent/60 bg-bg px-4 py-2.5 font-mono text-xs leading-relaxed text-muted">
-            {checkoutNote}
+      {/* rail — DualShock panel over the summary, sticky beside the list on desktop */}
+      <aside className="h-max lg:sticky lg:top-24">
+        <div className="relative h-44 overflow-hidden border border-line bg-surface sm:h-56 lg:h-64">
+          <div
+            aria-hidden="true"
+            className="grid-floor pointer-events-none absolute inset-0 opacity-60"
+          />
+          <div
+            aria-hidden="true"
+            className="dither-glow pointer-events-none absolute top-1/2 left-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 opacity-70"
+          />
+          <CartScene className="absolute inset-0" />
+          <p className="absolute bottom-4 left-5 font-mono text-[11px] tracking-[0.2em] text-muted uppercase">
+            The haul
           </p>
-        )}
+          {/* CC BY 4.0 requires crediting the model author */}
+          <a
+            href="https://sketchfab.com/3d-models/b0cbb5caba6b4a6bb49c44cd27ff1aff"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute right-4 bottom-4 font-mono text-[10px] tracking-[0.1em] text-muted uppercase transition-colors duration-200 hover:text-accent"
+          >
+            Model: JeppeHove-Nyborg · CC BY 4.0
+          </a>
+        </div>
+
+        <div className="mt-4 border border-line bg-surface p-6">
+          <h2 className="font-display text-2xl uppercase">Summary</h2>
+          <dl className="mt-4 space-y-3 border-b border-line pb-4 font-mono text-sm">
+            <div className="flex items-baseline justify-between gap-4">
+              <dt className="tracking-[0.12em] text-muted uppercase">Items</dt>
+              <dd className="tabular-nums text-heading">{totalCount}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4">
+              <dt className="tracking-[0.12em] text-muted uppercase">Subtotal</dt>
+              <dd className="text-xl font-bold tabular-nums text-accent">{formatPrice(subtotal)}</dd>
+            </div>
+          </dl>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCheckoutNote(
+                "Checkout isn't live yet — but your address book is. Add a delivery address in your profile so your cart's ready to go.",
+              )
+            }
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-accent font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
+          >
+            Checkout
+          </button>
+
+          {checkoutNote && (
+            <p role="status" className="mt-4 border-l-2 border-accent/60 bg-bg px-4 py-2.5 font-mono text-xs leading-relaxed text-muted">
+              {checkoutNote}
+            </p>
+          )}
+        </div>
       </aside>
     </div>
   );

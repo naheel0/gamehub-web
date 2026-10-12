@@ -11,7 +11,8 @@ import { fetchAllGames } from "@/lib/api";
 // genre counts -> pick-your-game CTA. Every number on the page comes
 // from the API; zero invented content.
 export default async function Home() {
-  const all = await fetchAllGames();
+  // down = null → degrade to empty sections (the landing never hard-errors)
+  const all = (await fetchAllGames()) ?? [];
 
   const byRating = [...all].sort((a, b) => b.rating - a.rating);
   const heroGames = byRating

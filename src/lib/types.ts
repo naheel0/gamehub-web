@@ -35,3 +35,49 @@ export interface WishlistItem {
 export interface CartItem extends WishlistItem {
   quantity: number;
 }
+
+/** GET /api/Auth/profile envelope data (verified against AuthResponse). */
+export interface ProfileUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: string; // "User" | "Admin"
+  status: string; // "Active" | "Blocked"
+}
+
+/** /api/Addresses rows (verified against AddressDto). */
+export interface Address {
+  addressId: string;
+  fullName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
+}
+
+/** /api/Orders rows — history carries the full OrderDto (verified). */
+export interface OrderItem {
+  gameId: number;
+  gameName: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  purchaseId: number;
+  orderId: string;
+  orderDate: string; // ISO timestamp
+  items: OrderItem[];
+  subTotal: number;
+  tax: number;
+  total: number;
+  shippingAddress: Address;
+  paymentMethod: string;
+  status: string;
+}
