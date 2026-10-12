@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { API_BASE } from "@/lib/api";
-import { AUTH_COOKIES, applyAuthCookies, refreshFromSetCookie } from "@/lib/auth";
+import { AUTH_COOKIES, applyAuthCookies, backendFetch, tryRefresh } from "@/lib/auth";
 
 /**
  * GET → who am I + badge counts, one client round trip.
@@ -19,14 +18,15 @@ export async function GET() {
   let token = access;
   let rotated: string | undefined;
 
-  let profile = await backendGet("/api/Auth/profile", token);
+  let profile = await backendFetch("/api/Auth/profile", token);
   if (profile?.status === 401) {
     const refresh = store.get(AUTH_COOKIES.refresh)?.value;
-    const renewed = refresh ? await tryRefresh(refresh) : null;
-    if (!renewed) return NextResponse.json({ user: null }); // dead session
+    const renewed = refresh ? await tryRefresh(refresh) : { kind: "dead" as const };
+    if (renewed.kind === "network") return NextResponse.json({ user: null }, { status: 502 });
+    if (renewed.kind !== "ok") return NextResponse.json({ user: null }); // dead session
     token = renewed.token;
     rotated = renewed.rotated;
-    profile = await backendGet("/api/Auth/profile", token);
+    profile = await backendFetch("/api/Auth/profile", token);
   }
   if (!profile) return NextResponse.json({ user: null }, { status: 502 });
   if (!profile.ok) return NextResponse.json({ user: null });
@@ -58,45 +58,12 @@ async function readUser(res: Response): Promise<{ firstName?: string; email?: st
   }
 }
 
-async function tryRefresh(
-  refresh: string,
-): Promise<{ token: string; rotated?: string } | null> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/api/Auth/refresh`, {
-      method: "POST",
-      headers: { Cookie: `refreshToken=${refresh}` },
-      cache: "no-store",
-    });
-  } catch {
-    return null;
-  }
-  try {
-    const env = (await res.json()) as { success?: boolean; data?: { accessToken?: string } };
-    if (!res.ok || !env.success || !env.data?.accessToken) return null;
-    return { token: env.data.accessToken, rotated: refreshFromSetCookie(res.headers) };
-  } catch {
-    return null;
-  }
-}
-
 async function countItems(path: string, token: string): Promise<number | null> {
-  const res = await backendGet(path, token);
+  const res = await backendFetch(path, token);
   if (!res || !res.ok) return null;
   try {
     const items = await res.json();
     return Array.isArray(items) ? items.length : null;
-  } catch {
-    return null;
-  }
-}
-
-async function backendGet(path: string, token: string): Promise<Response | null> {
-  try {
-    return await fetch(`${API_BASE}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
   } catch {
     return null;
   }

@@ -88,6 +88,14 @@ Tool routing (animation-orchestrator):
   Pointer parallax trails the camera (fine pointers only). Same gates as
   EmberField: reduced motion = one frame at rest, off-view/off-tab = loop
   stops, WebGL failure = page stands without the key.
+- **three.js + GSAP** — the wishlist heart (`wishlist/HeartScene`): a
+  primitive extruded bezier heart (explicit lobe/cleft/point profile — no
+  downloaded asset) with a slow **heartbeat** (scale yoyo through its own
+  `beat` channel, `sine.inOut`, 0.55s + 0.6s hold), entrance drop-in
+  (`expo.out`) composed through `enter.p`, sway + float on the spinner
+  group, pointer parallax trailing the camera. Same gates as EmberField:
+  reduced motion = one frame at rest, off-view/off-tab = loop stops,
+  WebGL failure = glow + caption still carry the panel.
 - **CSS** — marquee ticker (46s linear, pause on hover), hover states
   (`transition 150–200ms`). Featured cards lift (`translate -4px` + accent
   border + `shadow-xl`) on hover. Navbar v3 (`badge-pop` on count mount,
@@ -144,9 +152,11 @@ Session-aware chrome over the static shell: account slot + counts resolve
 once after mount via `/api/auth/session` — pending = slot stays EMPTY, never
 a false "signed out". Signed in = crimson dot + first name + Sign out
 (proxy POST, revokes all backend refresh tokens + access jti, clears local
-cookies regardless). Cart/Wishlist are **inert status indicators** with live
-counts (user-set: badges only, no destination until the cart pages ship —
-role=img + aria-label, no click affordance). Mobile/tablet: hamburger →
+cookies regardless). Cart/Wishlist badges are **live links** to `/cart` /
+`/wishlist` (aria-label announces "Cart — 3 items"; `aria-current` when
+active; the `badge-pop` replays on every count move because the badge
+re-keys — any mutation announces `counts:changed` and the navbar
+re-resolves alongside). Mobile/tablet: hamburger →
 drawer **portal'd to body** (the header's backdrop-blur would otherwise
 become the containing block for its position:fixed) — Escape closes + focus
 returns, Tab cycles inside, body scroll locks, route change/backdrop close) · `Hero` (art layer, dither glow, sweep,
@@ -165,8 +175,22 @@ title, rating, INR price; used by `FeaturedGrid` and the catalog grid) ·
 `game/ProductMedia` (stage + trailer/art tile rail; stage swaps are client
 state, `art-in` class reuse; trailer facade → click-to-play
 `youtube-nocookie.com` iframe, `autoplay=1` only after the click) ·
-`game/BuyBox` (price, rating, stock, spec rows, quantity stepper, Add to
-cart + Buy now → honest on-click gate notice, `role="status"`) ·
+`game/BuyBox` (price, rating, stock, spec rows, quantity stepper, live
+actions through the store relay: Add to cart posts real quantity, Buy now
+adds then routes to `/cart`, heart toggles the signed-in wishlist
+(`aria-pressed`, fill = saved); 401 → sign-in gate notice, every mutation
+announces `counts:changed`, `role="status"`) ·
+`wishlist/HeartScene` (primitive extruded bezier heart — no downloaded
+asset: arena-crimson standard material, soft bevel, 7 white tetrahedron
+shards, key/fill/crimson-rim/spill rig; entrance + heartbeat compose
+through separate channels so they never fight, sway + pointer parallax;
+EmberField lifecycle gates: WebGL try/catch, off-view/off-tab pause, one
+frame under reduced motion, full dispose) · `wishlist/WishlistClient`
+(client state machine: skeleton / 401 gate / honest error + retry / empty /
+rows with Move to cart + Remove; `deal-in` row stagger, `role="status"`
+flash line) · `cart/CartClient` (same state machine + sticky Summary,
+1–99 stepper that resyncs from source after a rejected change, honest
+checkout gate note) ·
 `catalog/CatalogToolbar` (client: 300ms-debounced search → `router.replace`,
 genre tabs with accent underline, sort select, `CountUp` on the live count) ·
 `catalog/CatalogPagination` (real `next/link` pages with aria labels) ·
@@ -264,6 +288,24 @@ the **shadcn MCP** (registry view + audit checklist):
   /api/auth/logout` — backend `Logout` revokes all refresh tokens +
   blacklists the access jti in one call; our cookies clear even if that
   call fails.
+- `/wishlist` and `/cart` — static (○) shells: poster heading + panel
+  render instantly; the list body resolves client-side because both are
+  per-account. `/wishlist` = heading + `WishlistClient` + sticky
+  `HeartScene` panel (dither glow + caption, `h-44` band above the list on
+  mobile). `/cart` = poster heading band (dither glow + grid floor — the
+  panel grammar carried as type: this is the app's most task-focused page)
+  + `CartClient` (list left, sticky Summary right). Five **store relay**
+  routes (`/api/wishlist[...]`, `/api/cart[...]`) forward to the backend
+  with the httpOnly access token via the shared `relay()` in
+  `lib/auth.ts`: one transparent refresh retry on 401, honest status
+  passthrough (401 = really signed out / session dead, 502 = couldn't reach
+  the store → error + retry, never a false sign-out), `{gameId}` path
+  segments validated `^\d+$` before touching upstream. Refresh tokens are
+  single-use backend-side, so `tryRefresh` dedupes concurrent 401s (navbar
+  session + page fetch on the same load) into one call. Mutations announce
+  `counts:changed` (window event) → navbar badges re-resolve. Checkout is
+  gated honestly: orders need a saved delivery address, so the button
+  states that instead of faking a purchase.
 
 ## Known ceiling
 

@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Minus, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
+import { useRouter } from "next/navigation";
+import { Heart, Minus, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/format";
+import { announceCounts, storeCall } from "@/lib/store";
+import type { WishlistItem } from "@/lib/types";
 
 /**
  * E-com buy box (Flpkart/Amazon grammar, Crimson Arena skin): title, star
  * rating, stock badge, big price, genre/platform, description, quantity
- * stepper, Add to Cart + Buy Now. The live API guards /Cart and /Orders
- * behind JWT auth (401 verified, no login exists in this frontend yet),
- * so the actions state that honestly instead of faking a cart — no
- * invented policies or links.
+ * stepper. Now live: Add to cart posts real quantity, Buy now adds then
+ * routes to /cart, and the heart toggles the signed-in wishlist — all
+ * through our own relay routes (401 → sign-in gate, never a fake action).
+ * Every mutation announces `counts:changed` so the navbar badges follow.
  */
 export default function BuyBox({
+  id,
   name,
   genre,
   platform,
@@ -22,6 +26,7 @@ export default function BuyBox({
   inStock,
   description,
 }: {
+  id: number;
   name: string;
   genre: string;
   platform: string;
@@ -30,14 +35,31 @@ export default function BuyBox({
   inStock: boolean;
   description?: string;
 }) {
+  const router = useRouter();
   const [qty, setQty] = useState(1);
   const [note, setNote] = useState<ReactNode | null>(null);
+  const [cartBusy, setCartBusy] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
+  // null = not known yet (signed out or lookup pending) — heart shows outline
+  const [saved, setSaved] = useState<boolean | null>(null);
 
-  // accounts exist now — the gate points at sign-in; cart itself opens next
-  const gated = () =>
+  useEffect(() => {
+    let live = true;
+    storeCall<WishlistItem[]>("GET", "/api/wishlist").then((r) => {
+      if (live && r.ok && Array.isArray(r.data)) {
+        setSaved(r.data.some((i) => i.gameId === id));
+      }
+      // 401 / failure: stays null — clicking the heart gates honestly
+    });
+    return () => {
+      live = false;
+    };
+  }, [id]);
+
+  const gated = (what: string) =>
     setNote(
       <>
-        Sign in to buy — cart and checkout open for signed-in players next.{" "}
+        Sign in to {what} — your cart and saved titles live with your account.{" "}
         <Link
           href="/login"
           className="text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
@@ -47,6 +69,58 @@ export default function BuyBox({
         .
       </>,
     );
+
+  const addToCart = async (thenRoute: boolean) => {
+    if (cartBusy) return;
+    setCartBusy(true);
+    const r = await storeCall<{ message: string }>("POST", "/api/cart", {
+      gameId: id,
+      quantity: qty,
+    });
+    if (!r.ok) {
+      setCartBusy(false);
+      if (r.status === 401) gated("buy from the store");
+      else setNote(r.message);
+      return;
+    }
+    announceCounts();
+    if (thenRoute) {
+      router.push("/cart");
+      return; // busy stays on — the route change is the spinner
+    }
+    setCartBusy(false);
+    setNote(
+      <>
+        Added to your cart{qty > 1 ? ` — ${qty} copies` : ""}.{" "}
+        <Link
+          href="/cart"
+          className="text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
+        >
+          View your cart
+        </Link>
+        .
+      </>,
+    );
+  };
+
+  const toggleWishlist = async () => {
+    if (wishBusy) return;
+    const adding = !saved;
+    setWishBusy(true);
+    const r = await storeCall<{ message: string }>(
+      adding ? "POST" : "DELETE",
+      `/api/wishlist/${id}`,
+    );
+    setWishBusy(false);
+    if (!r.ok) {
+      if (r.status === 401) gated("save titles for later");
+      else setNote(r.message);
+      return;
+    }
+    setSaved(adding);
+    announceCounts();
+    setNote(adding ? `${name} saved to your wishlist.` : `${name} removed from your wishlist.`);
+  };
 
   const stars = Math.round(rating);
 
@@ -137,28 +211,42 @@ export default function BuyBox({
         </div>
       </div>
 
-      {/* actions */}
+      {/* actions: cart + buy-now + wishlist heart */}
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={gated}
-          disabled={!inStock}
+          onClick={() => void addToCart(false)}
+          disabled={!inStock || cartBusy}
           className="inline-flex h-12 flex-1 items-center justify-center gap-2 bg-accent px-7 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted disabled:hover:translate-y-0"
         >
-          <ShoppingCartSimple className="h-5 w-5" weight="bold" />
-          Add to cart
+          <ShoppingCartSimple className="h-5 w-5" weight="bold" aria-hidden />
+          {cartBusy ? "Adding…" : "Add to cart"}
         </button>
         <button
           type="button"
-          onClick={gated}
-          disabled={!inStock}
+          onClick={() => void addToCart(true)}
+          disabled={!inStock || cartBusy}
           className="inline-flex h-12 flex-1 items-center justify-center border-2 border-heading px-7 font-semibold text-heading transition-colors duration-200 hover:border-accent hover:bg-accent hover:text-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:hover:bg-transparent"
         >
           Buy now
         </button>
+        <button
+          type="button"
+          onClick={() => void toggleWishlist()}
+          disabled={wishBusy}
+          aria-pressed={saved === true}
+          aria-label={saved ? `Remove ${name} from wishlist` : `Save ${name} to wishlist`}
+          className="flex h-12 w-12 shrink-0 items-center justify-center border border-line transition-colors duration-200 hover:border-accent disabled:cursor-wait disabled:opacity-60"
+        >
+          <Heart
+            className={`h-5 w-5 transition-colors duration-200 ${saved ? "text-accent" : "text-muted"}`}
+            weight={saved ? "fill" : "regular"}
+            aria-hidden
+          />
+        </button>
       </div>
 
-      {/* honest gate notice (role=status: announced on click) */}
+      {/* honest notice (role=status: announced on click) */}
       {note && (
         <p
           role="status"

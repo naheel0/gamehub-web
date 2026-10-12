@@ -21,5 +21,6 @@ export {
   ShoppingCartSimple,
   SignOut,
   Star,
+  Trash,
   X,
 } from "@phosphor-icons/react";

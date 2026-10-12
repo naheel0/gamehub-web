@@ -70,6 +70,7 @@ export default async function GamePage({ params }: Props) {
               trailerUrl={game.trailerUrl}
             />
             <BuyBox
+              id={game.id}
               name={game.name}
               genre={game.genre}
               platform={game.platform}

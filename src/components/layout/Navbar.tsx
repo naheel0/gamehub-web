@@ -15,9 +15,10 @@ import { Heart, List, ShoppingCartSimple, X } from "@/components/ui/icons";
  * badge pop when counts resolve; the drawer rises staggered (open-only —
  * close stays instant rather than pulling in an exit-animation library).
  * Session semantics are unchanged from v2: resolve once after mount,
- * pending = empty slot (never a false "signed out"), cart/wishlist stay
- * inert status indicators, drawer keeps Escape/focus-return/Tab cycle/
- * scroll lock/portal. Motion is CSS-only (animation-orchestrator: simple
+ * pending = empty slot (never a false "signed out"), cart/wishlist badges
+ * are live links to /cart and /wishlist (they re-resolve on the
+ * `counts:changed` event every mutation announces), drawer keeps
+ * Escape/focus-return/Tab cycle/scroll lock/portal. Motion is CSS-only (animation-orchestrator: simple
  * micro-interactions in an always-loaded component — no new runtime).
  */
 
@@ -76,31 +77,59 @@ function CountIcon({
   label,
   count,
   showLabel,
+  href,
+  active,
   className = "text-muted",
 }: {
   icon: ElementType;
   label: string;
   count: number | null | undefined;
   showLabel?: boolean;
+  href?: string;
+  active?: boolean;
   className?: string;
 }) {
-  // inert: a span, not a link — badge = real count, no click affordance
+  // badge = real count; with an href the badge is the destination itself
   const announced =
     count == null ? label : `${label} — ${count} ${count === 1 ? "item" : "items"}`;
-  return (
-    <span role="img" aria-label={announced} className={`inline-flex items-center gap-2 ${className}`}>
-      <span className="relative inline-flex">
-        <Icon className="h-5 w-5" aria-hidden />
-        {count ? (
-          <span className="badge-pop absolute -top-2 -right-2.5 grid min-w-4.5 place-items-center rounded-full bg-accent px-1 pt-px font-mono text-[10px] leading-4 text-bg">
-            {count}
-          </span>
-        ) : null}
-      </span>
-      {showLabel ? (
-        <span className="font-mono text-xs tracking-[0.14em] uppercase">{label}</span>
+  const badge = (
+    <span className="relative inline-flex">
+      <Icon className="h-5 w-5" aria-hidden />
+      {count ? (
+        // key = remount on change: the pop replays on every count move
+        <span
+          key={count}
+          className="badge-pop absolute -top-2 -right-2.5 grid min-w-4.5 place-items-center rounded-full bg-accent px-1 pt-px font-mono text-[10px] leading-4 text-bg"
+        >
+          {count}
+        </span>
       ) : null}
     </span>
+  );
+  const text = showLabel ? (
+    <span className="font-mono text-xs tracking-[0.14em] uppercase">{label}</span>
+  ) : null;
+
+  if (!href) {
+    return (
+      <span role="img" aria-label={announced} className={`inline-flex items-center gap-2 ${className}`}>
+        {badge}
+        {text}
+      </span>
+    );
+  }
+  return (
+    <Link
+      href={href}
+      aria-label={announced}
+      aria-current={active ? "page" : undefined}
+      className={`inline-flex items-center gap-2 transition-colors duration-200 hover:text-heading ${
+        active ? "text-heading" : ""
+      } ${className}`}
+    >
+      {badge}
+      {text}
+    </Link>
   );
 }
 
@@ -114,27 +143,32 @@ export default function Navbar() {
 
   useEffect(() => {
     let live = true;
-    fetch("/api/auth/session")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { user?: { firstName?: string; email?: string } | null; cartCount?: number | null; wishlistCount?: number | null }) => {
-        if (!live) return;
-        setSession(
-          d.user
-            ? {
-                status: "in",
-                firstName: d.user.firstName,
-                email: d.user.email,
-                cartCount: d.cartCount ?? null,
-                wishlistCount: d.wishlistCount ?? null,
-              }
-            : { status: "anon" },
-        );
-      })
-      .catch(() => {
-        /* network/502 → stay pending: never claim signed-out we didn't verify */
-      });
+    const loadSession = () =>
+      fetch("/api/auth/session")
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d: { user?: { firstName?: string; email?: string } | null; cartCount?: number | null; wishlistCount?: number | null }) => {
+          if (!live) return;
+          setSession(
+            d.user
+              ? {
+                  status: "in",
+                  firstName: d.user.firstName,
+                  email: d.user.email,
+                  cartCount: d.cartCount ?? null,
+                  wishlistCount: d.wishlistCount ?? null,
+                }
+              : { status: "anon" },
+          );
+        })
+        .catch(() => {
+          /* network/502 → keep current state: never claim signed-out we didn't verify */
+        });
+    loadSession();
+    // every cart/wishlist mutation announces → badges follow without refetch loops
+    window.addEventListener("counts:changed", loadSession);
     return () => {
       live = false;
+      window.removeEventListener("counts:changed", loadSession);
     };
   }, []);
 
@@ -244,8 +278,20 @@ export default function Navbar() {
             Store
           </NavLink>
           <NavLink href="/#genres">Genres</NavLink>
-          <CountIcon icon={ShoppingCartSimple} label="Cart" count={cartCount} />
-          <CountIcon icon={Heart} label="Wishlist" count={wishlistCount} />
+          <CountIcon
+            icon={ShoppingCartSimple}
+            label="Cart"
+            count={cartCount}
+            href="/cart"
+            active={pathname === "/cart"}
+          />
+          <CountIcon
+            icon={Heart}
+            label="Wishlist"
+            count={wishlistCount}
+            href="/wishlist"
+            active={pathname === "/wishlist"}
+          />
           {account}
         </nav>
 
@@ -294,8 +340,22 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-7 border-t border-line pt-5 text-heading">
-            <CountIcon icon={ShoppingCartSimple} label="Cart" count={cartCount} showLabel />
-            <CountIcon icon={Heart} label="Wishlist" count={wishlistCount} showLabel />
+            <CountIcon
+              icon={ShoppingCartSimple}
+              label="Cart"
+              count={cartCount}
+              showLabel
+              href="/cart"
+              active={pathname === "/cart"}
+            />
+            <CountIcon
+              icon={Heart}
+              label="Wishlist"
+              count={wishlistCount}
+              showLabel
+              href="/wishlist"
+              active={pathname === "/wishlist"}
+            />
           </div>
 
           <div className="border-t border-line pt-5">

@@ -23,3 +23,15 @@ export interface PagedGames {
   totalCount: number;
   totalPages: number;
 }
+
+/** Snapshot rows from /api/Wishlist and /api/Cart (verified against backend DTOs). */
+export interface WishlistItem {
+  gameId: number;
+  gameName: string;
+  image: string;
+  price: number;
+}
+
+export interface CartItem extends WishlistItem {
+  quantity: number;
+}
