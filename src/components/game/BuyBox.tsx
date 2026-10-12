@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { Minus, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/format";
 
@@ -30,11 +31,21 @@ export default function BuyBox({
   description?: string;
 }) {
   const [qty, setQty] = useState(1);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<ReactNode | null>(null);
 
+  // accounts exist now — the gate points at sign-in; cart itself opens next
   const gated = () =>
     setNote(
-      "Cart and checkout are almost here — accounts open first. Check back shortly to place your order.",
+      <>
+        Sign in to buy — cart and checkout open for signed-in players next.{" "}
+        <Link
+          href="/login"
+          className="text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
+        >
+          Sign in
+        </Link>
+        .
+      </>,
     );
 
   const stars = Math.round(rating);

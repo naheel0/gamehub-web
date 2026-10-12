@@ -79,9 +79,20 @@ Tool routing (animation-orchestrator):
 - **three.js** — ember field in the hero: 420 additive points, low-power
   renderer, pauses off-view/off-tab, one frame under reduced motion, silent
   skip without WebGL, full dispose on unmount. Lazy client-only.
+- **three.js + GSAP** — the auth key (`auth/KeyScene`): primitive-composed
+  game key (torus bow, emissive icosahedron gem, cylinder shaft, box teeth,
+  5 orbiting shards) with a crimson point light; GSAP entrance drop-in
+  (`expo.out` 1.15s position / 1.35s rotation + camera `power3.out`) on the
+  OUTER group, per-frame idle (rotation, float, gem pulse) on the INNER
+  group — nested so entrance and idle never fight over one transform.
+  Pointer parallax trails the camera (fine pointers only). Same gates as
+  EmberField: reduced motion = one frame at rest, off-view/off-tab = loop
+  stops, WebGL failure = page stands without the key.
 - **CSS** — marquee ticker (46s linear, pause on hover), hover states
   (`transition 150–200ms`). Featured cards lift (`translate -4px` + accent
-  border + `shadow-xl`) on hover.
+  border + `shadow-xl`) on hover. Navbar v3 (`badge-pop` on count mount,
+  staggered `.drawer-in` rise) — mount-driven `both`-fill keyframes, all
+  `animation: none` under reduced motion (final state ships).
 - **Tilt** (`ui/Tilt`, GSAP `quickTo`) — pointer-tracked 3D perspective on
   catalog cards: `rotationX/Y` follow the cursor (clamped ±5°,
   `transformPerspective: 900`, 0.3s `power2.out`, zero on leave), so the
@@ -108,17 +119,37 @@ genre counts). Empty and error states are honest but customer-toned ("We
 couldn't load the catalog right now — refresh in a moment"): **customer-facing
 copy never names the backend, API, or missing internals** (user-set,
 production-level rule). No invented policies, testimonials, discounts, or
-links; the single external link is the real GitHub repo. Genre chips on
+links; the single external link is the real GitHub repo — except the **CC BY
+4.0 model credit** on `/login` (license obligation for the DualSense GLB:
+author + license, linking to the original Sketchfab page; never remove it). Genre chips on
 `/games` are real controls (URL-backed filter route). Detail page: API
 404/400 → real `not-found` ("Not in the arena"); transport failure → error
-boundary that admits the store is unreachable — never a fake 404. Cart and
-checkout are JWT-gated server-side and no auth exists in this frontend, so
-the buy buttons show an honest on-click notice ("accounts open first") —
-never a fake success.
+boundary that admits the store is unreachable — never a fake 404. Auth: the
+buy buttons show an honest on-click notice that points at `/login` ("Sign in
+to buy — cart and checkout open for signed-in players next") — never a fake
+success. Signup is the backend's real OTP email flow; backend error messages
+surface verbatim (the one leaked "refresh token" string is translated).
 
 ## Components
 
-`Navbar` (fixed; Store → `/games`, Genres → `/#genres`, logo → `/`) · `Hero` (art layer, dither glow, sweep,
+`Navbar` (fixed; Store → `/games`, Genres → `/#genres`, logo → `/`;
+poster-loud chrome (v3): Big Shoulders caps carry the nav, the logo's
+slash lean is drawn as the **active-route underline** (crimson +
+`aria-current`, hover previews it muted-white), the arena CTA is sheared
+via `clip-path` to echo the mark, the bar **scroll-lifts** (`bg-bg/95` +
+`shadow-lg` past 8px), and the **badge pop** is the navbar's one authored
+motion moment with the drawer rising staggered (CSS keyframes, open-only —
+close stays instant rather than pulling in an exit-animation library).
+Session-aware chrome over the static shell: account slot + counts resolve
+once after mount via `/api/auth/session` — pending = slot stays EMPTY, never
+a false "signed out". Signed in = crimson dot + first name + Sign out
+(proxy POST, revokes all backend refresh tokens + access jti, clears local
+cookies regardless). Cart/Wishlist are **inert status indicators** with live
+counts (user-set: badges only, no destination until the cart pages ship —
+role=img + aria-label, no click affordance). Mobile/tablet: hamburger →
+drawer **portal'd to body** (the header's backdrop-blur would otherwise
+become the containing block for its position:fixed) — Escape closes + focus
+returns, Tab cycles inside, body scroll locks, route change/backdrop close) · `Hero` (art layer, dither glow, sweep,
 embers, featured card: key-art rail + title/price line + genre + data strip
 with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 "Registry sources") · `Ticker` (all titles,
@@ -140,7 +171,27 @@ cart + Buy now → honest on-click gate notice, `role="status"`) ·
 genre tabs with accent underline, sort select, `CountUp` on the live count) ·
 `catalog/CatalogPagination` (real `next/link` pages with aria labels) ·
 `ui/Tilt` (pointer-tracked 3D perspective via GSAP `quickTo`, clamped ~5°,
-gated on reduced motion + coarse pointers; wraps catalog cards).
+gated on reduced motion + coarse pointers; wraps catalog cards) ·
+`auth/AuthForm` (client, one component both modes: login = email+password;
+signup = step 1 `send-otp` → step 2 OTP + names/phone/password with resend
+cooldown; client validation is the real gate — backend DTOs have none;
+backend errors surface verbatim via `role="alert"`; success swaps in a
+signed-in panel, `?next=` read client-side at click with open-redirect
+guard) · `auth/KeyScene` (the 3D key: three.js primitives — torus bow,
+icosahedron gem, cylinder shaft, box teeth, 5 orbiting tetrahedron shards;
+emissive crimson gem + point light; nested groups so the GSAP entrance
+drop-in (`expo.out`) and per-frame idle never share a transform; EmberField
+lifecycle discipline: WebGL try/catch, off-view/off-tab pause, one frame
+under reduced motion, full dispose) · `auth/ControllerScene` (login only —
+signup keeps the Key): the CC BY 4.0 DualSense GLB by Taohid Animation
+(`public/models/dualsense.glb`, 6 MB, lazy client load) in the studio's
+**Midnight Black** finish — recolor + canvas-drawn △○×□ decal projection
+(`DecalGeometry`) ported from the dualsense-controller project; RoomEnvironment
+PMREM rig + arena crimson spill light; idle sway + pointer parallax +
+**drag-to-rotate** (fine pointers; `touch-action: pan-y` keeps vertical
+swipes scrolling); GSAP entrance composes through an `enter.p` progress,
+never over the per-frame transforms; same lifecycle gates as KeyScene.
+Model failure/WebGL absence = empty panel, page stands).
 
 ## Registry sources
 
@@ -193,6 +244,26 @@ the **shadcn MCP** (registry view + audit checklist):
   in `Tilt`.
 - `not-found.tsx` ("Not in the arena") and `games/[id]/error.tsx` (honest
   API-down boundary) are shared/global.
+- `/login` and `/signup` — fully static (○); split `min-h-svh` grid: form
+  left ("Enter the arena" / "Claim your key" + `AuthForm`), `KeyScene`
+  panel right (slim `h-44` band above the form on mobile). `?next=` is read
+  client-side at click time (keeps the page static; `//`-guard blocks open
+  redirects). Auth itself runs through **route-handler proxies**
+  (`/api/auth/login`, `/api/auth/send-otp`, `/api/auth/verify-and-register`)
+  which server-side fetch the backend (CORS), forward backend messages
+  verbatim, and on success move the JWT pair into **httpOnly cookies**
+  (`gh_access` 15 min, `gh_refresh` 7 days — lifetimes match the backend's
+  JwtSettings; the refresh value is relayed from the backend's Set-Cookie
+  header since its body field is nulled). Client JS never sees a token.
+  `GET /api/auth/session` — one round trip for the navbar: profile + cart +
+  wishlist counts (Bearer), with one transparent `/api/Auth/refresh` retry
+  when the access token expired (relayed `gh_refresh` value sent as the
+  backend's `refreshToken` Cookie; rotated pair re-applied); no cookie →
+  `{user:null}` with zero backend calls; network failure → 502 so the
+  client keeps "unresolved" rather than claiming signed-out. `POST
+  /api/auth/logout` — backend `Logout` revokes all refresh tokens +
+  blacklists the access jti in one call; our cookies clear even if that
+  call fails.
 
 ## Known ceiling
 
