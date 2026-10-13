@@ -89,9 +89,10 @@ Tool routing (animation-orchestrator):
   caption still carry the panel.
 - **CSS** — marquee ticker (46s linear, pause on hover), hover states
   (`transition 150–200ms`). Featured cards lift (`translate -4px` + accent
-  border + `shadow-xl`) on hover. Navbar v3 (`badge-pop` on count mount,
-  staggered `.drawer-in` rise) — mount-driven `both`-fill keyframes, all
-  `animation: none` under reduced motion (final state ships).
+  border + `shadow-xl`) on hover. Navbar v4 (`badge-pop` on count mount,
+  staggered `.drawer-in` rise, `.menu-in` 120ms account-menu fade+slide) —
+  mount-driven `both`-fill keyframes, all `animation: none` under reduced
+  motion (final state ships).
 - **Tilt** (`ui/Tilt`, GSAP `quickTo`) — pointer-tracked 3D perspective on
   catalog cards: `rotationX/Y` follow the cursor (clamped ±5°,
   `transformPerspective: 900`, 0.3s `power2.out`, zero on leave), so the
@@ -131,27 +132,32 @@ surface verbatim (the one leaked "refresh token" string is translated).
 
 ## Components
 
-`Navbar` (fixed; Store → `/games`, Genres → `/#genres`, logo → `/`;
-poster-loud chrome (v3): Big Shoulders caps carry the nav, the logo's
-slash lean is drawn as the **active-route underline** (crimson +
-`aria-current`, hover previews it muted-white), the arena CTA is sheared
-via `clip-path` to echo the mark, the bar **scroll-lifts** (`bg-bg/95` +
-`shadow-lg` past 8px), and the **badge pop** is the navbar's one authored
-motion moment with the drawer rising staggered (CSS keyframes, open-only —
-close stays instant rather than pulling in an exit-animation library).
-Session-aware chrome over the static shell: account slot + counts resolve
-once after mount via `/api/auth/session` — pending = slot stays EMPTY, never
-a false "signed out". Signed in = crimson dot + first name (the chip is a
-**live link to `/profile`**, `aria-current` when there) + Sign out
-(proxy POST, revokes all backend refresh tokens + access jti, clears local
-cookies regardless). Cart/Wishlist badges are **live links** to `/cart` /
-`/wishlist` (aria-label announces "Cart — 3 items"; `aria-current` when
-active; the `badge-pop` replays on every count move because the badge
-re-keys — any mutation announces `counts:changed` and the navbar
-re-resolves alongside). Mobile/tablet: hamburger →
-drawer **portal'd to body** (the header's backdrop-blur would otherwise
-become the containing block for its position:fixed) — Escape closes + focus
-returns, Tab cycles inside, body scroll locks, route change/backdrop close) · `Hero` (art layer, dither glow, sweep,
+`Navbar` (fixed, **v4 — brand · links · actions**; logo → `/`, links Store →
+`/games`, Featured → `/#featured`, Genres → `/#genres` — Big Shoulders caps,
+the sheared **active-route underline** keeps the lean grammar (crimson +
+`aria-current`, hover previews it muted-white). Right cluster: inline search
+(`type="search"`, sr-only label, accent caret) submits to `/games?q=…` and
+clears — the catalog toolbar stays the live source of truth, empty submit =
+`/games`; cart/wishlist badge links (**40px tap target**, `aria-label`
+announces "Cart — 3 items", `aria-current` when active, `badge-pop` re-keys
+on every `counts:changed` re-resolve); and **one auth button in three
+states** — pending = EMPTY slot (never a false "signed out"), anon = solid
+`Sign in` (heading ink, accent on hover) → `/login`, signed-in = `● name ˅`
+disclosure menu (name + email, Profile row with `aria-current`, Sign out =
+proxy POST revoking all backend refresh tokens + access jti, clearing local
+cookies regardless) with outside-click/Escape close, focus returned to the
+trigger, `aria-expanded`/`aria-haspopup`/`aria-controls` through `useId`.
+The sheared arena CTA is **landing-only** (it duplicated the Store link on
+every other route) and appears from `xl` (the cluster is too wide below it);
+below `lg` the hamburger carries everything: drawer **portal'd to body**
+(the header's backdrop-blur would become the containing block for its
+position:fixed) — links → search → badge row → account (same states, menu
+inline under the button) → landing-only CTA — Escape closes + focus
+returns, Tab cycles inside, body scroll locks, route change/backdrop close.
+Bar **scroll-lifts** (`bg-bg/95` + `shadow-lg` past 8px); motion stays
+CSS-only — `badge-pop`, staggered `.drawer-in` rise, `.menu-in` 120ms
+fade+slide — all `animation: none` under reduced motion (final state
+ships) · `Hero` (art layer, dither glow, sweep,
 embers, featured card: key-art rail + title/price line + genre + data strip
 with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 "Registry sources") · `Ticker` (all titles,
@@ -159,8 +165,14 @@ with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 stagger; optional `heading`/`eyebrow`, reused on the detail page as
 "More from the arena"; cards are `next/link` → `/games/[id]`) ·
 `GenreRail` (counts) · `CtaBand` (grid floor + dither glow) ·
-`Footer` (build-year constant; Profile in the nav column + a Legal link
-group → `/privacy` `/terms` `/refunds` `/cookies`) · `CookieConsent`
+`Footer` (v2 poster colophon: three-lean beat (underline grammar echoed),
+four columns — brand + GitHub · Store · Help (About/FAQ/Contact/Profile) ·
+Legal (all 7 policies + cookies) — skew-lean hover links matching the
+navbar, mono meta bar with build-year constant + back-to-top; gamepad
+`LogoMark` (Phosphor `GameController` fill in crimson `#ff2d55` on a
+`bg-soft` tile — the old site's glyph, shared via `ui/logo-mark.tsx`;
+same artwork ships as the favicon `app/icon.svg`), CSS-only motion,
+server component) · `CookieConsent`
 (bottom-right corner card: `useSyncExternalStore` over
 `localStorage.gh_consent` — server + hydration see "dismissed" (nothing in
 SSR HTML), the card rises in once post-hydration via the `consent-in`

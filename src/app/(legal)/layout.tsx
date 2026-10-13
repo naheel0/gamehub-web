@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-/** Shared chrome for /privacy, /terms, /refunds, /cookies — narrow prose column. */
+/** Shared chrome for the (legal) document pages — narrow prose column. */
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <>

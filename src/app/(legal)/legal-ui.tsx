@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-/** Prose primitives shared by the four legal pages — one source of heading
- *  styles so the document set reads as one voice. */
+/** Prose primitives shared by the legal document set — one source of heading
+ *  styles so every page reads as one voice. */
 
 export const inlineLink =
   "text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent";
@@ -24,8 +24,8 @@ export function ContactLine() {
   return (
     <p>
       Questions? Email{" "}
-      <a href="mailto:contact@gamehub.com" className={inlineLink}>
-        contact@gamehub.com
+      <a href="mailto:support@gamehub.com" className={inlineLink}>
+        support@gamehub.com
       </a>
       .
     </p>

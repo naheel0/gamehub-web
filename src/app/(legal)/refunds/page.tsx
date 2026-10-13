@@ -56,8 +56,8 @@ export default function RefundsPage() {
           </li>
           <li>
             Email{" "}
-            <a href="mailto:contact@gamehub.com" className={inlineLink}>
-              contact@gamehub.com
+            <a href="mailto:support@gamehub.com" className={inlineLink}>
+              support@gamehub.com
             </a>{" "}
             with the order ID and what went wrong.
           </li>
