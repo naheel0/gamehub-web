@@ -93,6 +93,14 @@ Tool routing (animation-orchestrator):
   staggered `.drawer-in` rise, `.menu-in` 120ms account-menu fade+slide) —
   mount-driven `both`-fill keyframes, all `animation: none` under reduced
   motion (final state ships).
+- **CSS — checkout & confirmation** — the insert-coin pay button
+  (`.coin-scan` sheared highlight sweep + `.coin-pulse` glow, infinite
+  loops, pulse gated `:not(:disabled)`), the HUD stage bar (square →
+  `CheckCircle` swap on hand-off, no keyframes), and the confirmation
+  achievement moment (`.win-flash` one-shot crimson flash + eight
+  `.win-ray` spans radiating from the check, rest `opacity: 0` so a
+  reduced-motion kill leaves nothing visible). Entrances ride `.deal-in`
+  stagger; all keyframes sit in the reduced-motion kill list.
 - **Tilt** (`ui/Tilt`, GSAP `quickTo`) — pointer-tracked 3D perspective on
   catalog cards: `rotationX/Y` follow the cursor (clamped ±5°,
   `transformPerspective: 900`, 0.3s `power2.out`, zero on leave), so the
@@ -108,8 +116,8 @@ Tool routing (animation-orchestrator):
   motion and no-JS both stand at the true number.
 
 Reduced motion: GSAP gated by `if (reduce)` + matchMedia (final state ships),
-CSS animations set `animation: none !important` (sweep forced to
-`opacity: 0 !important`), motion `useReducedMotion` renders plain divs,
+CSS animations set `animation: none !important` (sweep and coin-scan forced
+to `opacity: 0 !important`), motion `useReducedMotion` renders plain divs,
 marquee freezes, three.js renders one frame.
 
 ## Content rules
@@ -125,9 +133,9 @@ author + license, linking to the original Sketchfab page; never remove it). Genr
 `/games` are real controls (URL-backed filter route). Detail page: API
 404/400 → real `not-found` ("Not in the arena"); transport failure → error
 boundary that admits the store is unreachable — never a fake 404. Auth: the
-buy buttons show an honest on-click notice that points at `/login` ("Sign in
-to buy — cart and checkout open for signed-in players next") — never a fake
-success. Signup is the backend's real OTP email flow; backend error messages
+buy buttons show an honest on-click notice that points at `/login` — never a fake
+success — and `/checkout` gates the same way (sign-in with `?next=` back to
+the same URL, including `?buy=` params). Signup is the backend's real OTP email flow; backend error messages
 surface verbatim (the one leaked "refresh token" string is translated).
 
 ## Components
@@ -169,10 +177,10 @@ stagger; optional `heading`/`eyebrow`, reused on the detail page as
 four columns — brand + GitHub · Store · Help (About/FAQ/Contact/Profile) ·
 Legal (all 7 policies + cookies) — skew-lean hover links matching the
 navbar, mono meta bar with build-year constant + back-to-top; gamepad
-`LogoMark` (Phosphor `GameController` fill in crimson `#ff2d55` on a
-`bg-soft` tile — the old site's glyph, shared via `ui/logo-mark.tsx`;
-same artwork ships as the favicon `app/icon.svg`), CSS-only motion,
-server component) · `CookieConsent`
+`LogoMark` (Phosphor `GameController` fill in crimson `#ff2d55`, bare —
+the old site's glyph, shared via `ui/logo-mark.tsx`; same artwork ships
+as the favicon `app/icon.svg`), CSS-only motion, server component) ·
+`CookieConsent`
 (bottom-right corner card: `useSyncExternalStore` over
 `localStorage.gh_consent` — server + hydration see "dismissed" (nothing in
 SSR HTML), the card rises in once post-hydration via the `consent-in`
@@ -197,7 +205,8 @@ state, `art-in` class reuse; trailer facade → click-to-play
 `youtube-nocookie.com` iframe, `autoplay=1` only after the click) ·
 `game/BuyBox` (price, rating, stock, spec rows, quantity stepper, live
 actions through the store relay: Add to cart posts real quantity, Buy now
-adds then routes to `/cart`, heart toggles the signed-in wishlist
+hands off to `/checkout?buy=<id>&qty=` (the island places the order at pay
+time), heart toggles the signed-in wishlist
 (`aria-pressed`, fill = saved); 401 → sign-in gate notice, every mutation
 announces `counts:changed`, `role="status"`) ·
 `wishlist/WishlistClient`
@@ -206,7 +215,23 @@ rows with Move to cart + Remove; `deal-in` row stagger, `role="status"`
 flash line; full-width list — the primitive heart panel was removed at the
 user's request) · `cart/CartClient` (same state machine + sticky rail: `GlbPanel`
 DualShock panel over the Summary, 1–99 stepper that resyncs from source after a
-rejected change, honest checkout gate note) · `three/GlbPanel` (the reusable
+rejected change, live `Proceed to checkout` hand-off to `/checkout`) ·
+`checkout/CheckoutClient` (one island serves both modes — cart lines or
+`?buy=` single title: skeleton / 401 gate with `?next=` / honest error +
+retry / empty-cart / ready; HUD stage bar (Cart → Delivery & pay → Razorpay,
+active square → check when the hand-off starts), address radio cards with
+pre-selected default + inline add form (AddressBook field grammar, shown
+auto when the book is empty), summary rail with the store's 10% tax,
+out-of-stock blocks the buy-now button, pay = order → create-link →
+`gh_pending` draft → full-page `shortUrl` redirect; a failed link mint keeps
+the placed order so retry never double-orders) ·
+`checkout/OrderConfirmation` (Razorpay return island: paid → `confirm-link`
+→ achievement card — `win-flash` + 8 `win-ray`s + `badge-pop` check, order
+detail from `GET /api/orders/{orderId}`; failed → `restore` → honest
+"nothing was charged, cart restored"; restore failed → check-your-cart copy;
+no params → resume the stashed link or a store pointer; draft read+cleared
+synchronously before any await, once-guard so double-effects can neither
+confirm nor restore twice) · `three/GlbPanel` (the reusable
 CC BY model panel: any GLB in `public/models` via the `src` prop + a `fitSize`
 (metres) that normalizes mixed-unit GLBs so the fixed rig + 0.1 near plane
 behave identically — a 0.03-unit GLB would otherwise clip behind the near
@@ -278,6 +303,12 @@ the **shadcn MCP** (registry view + audit checklist):
   (permanently hidden content) was chosen deliberately.
 - Font metrics warning: `Big Shoulders` has no fallback-metric override in
   next/font (warning only; font loads, no size-adjust on the fallback).
+- **codex-grid-background (advisory, detector):** `.grid-floor` in
+  `globals.css` (line 127) is the committed world grammar — Crimson Arena
+  panel floors on cart/checkout/confirmation header bands — not a
+  generated filler field; the "reserve grid overlays for measurement
+  surfaces" rule is waived for this one utility, which is the only place
+  the pattern is used.
 
 ## Routes
 
@@ -348,9 +379,31 @@ the **shadcn MCP** (registry view + audit checklist):
   segments validated `^\d+$` before touching upstream. Refresh tokens are
   single-use backend-side, so `tryRefresh` dedupes concurrent 401s (navbar
   session + page fetch on the same load) into one call. Mutations announce
-  `counts:changed` (window event) → navbar badges re-resolve. Checkout is
-  gated honestly: orders need a saved delivery address, so the button
-  states that instead of faking a purchase.
+  `counts:changed` (window event) → navbar badges re-resolve. The summary
+  rail hands off live via `Proceed to checkout` → `/checkout`.
+- `/checkout` — PPR (◐): static poster shell ("Insert coin" / Check **out**
+  band) wraps a `<Suspense>` body that resolves `?buy=&qty=`
+  (`fetchGame` server-side + one cold-start retry — price/stock never trust
+  the client) then mounts `CheckoutClient`. Pay flow: `POST /api/orders`
+  (or `/api/orders/buy-now`) → `POST /api/payments/create-link/{purchaseId}`
+  → `gh_pending` draft in localStorage → full-page redirect to Razorpay's
+  `shortUrl`.
+- `/order-confirmation` — PPR (◐): Razorpay returns with
+  `razorpay_payment_link_{id,status}` + `razorpay_payment_id` +
+  `reference_id=purchase-{id}-…`; server-read params stream behind a
+  skeleton (Suspense in the page — no `useSearchParams` in the build).
+  Paid → `POST /api/payments/confirm-link` (`{purchaseId,
+  razorpayPaymentLinkId, razorpayPaymentId}`; amount omitted — the backend
+  derives it in paise) → achievement card; failed/cancelled →
+  `POST /api/payments/restore/{purchaseId}` puts the cart back; neither
+  path fabricates state (`confirm-link` trusts the caller by backend
+  design; a stale `restore` just 404s into the honest copy).
+- The payment work rides the same `relay()` contract: six new routes
+  (`/api/orders` POST + `/api/orders/buy-now` + `/api/orders/[orderId]` +
+  `/api/payments/create-link/[purchaseId]` + `/api/payments/confirm-link` +
+  `/api/payments/restore/[purchaseId]`), GUID/`^\d+$` path validation and
+  DTO-shape checks (`addressId` GUID, `paymentMethod: "Razorpay"`,
+  quantity 1–99) before touching upstream.
 - `/profile` — static (○) shell: poster heading band (dither glow + grid
   floor, cart grammar) + `ProfileClient`. Three ARIA tab panels:
   **Details** (GET/PUT `/api/profile` → `/api/Auth/profile`; envelope

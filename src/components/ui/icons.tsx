@@ -10,6 +10,7 @@ export {
   CaretRight,
   CaretUp,
   CheckCircle,
+  CreditCard,
   Eye,
   EyeSlash,
   GameController,

@@ -285,6 +285,65 @@ select {
   animation: menu-in 0.12s ease-out both;
 }
 
+/* checkout: insert-coin pay button (scan sweep + glow pulse) — persistent
+   loops only, entrances ride the shared deal-in */
+@keyframes coin-scan {
+  from {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(520%) skewX(-18deg);
+  }
+}
+
+.coin-scan {
+  animation: coin-scan 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes coin-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 22px -4px var(--color-accent);
+  }
+}
+
+.coin-pay:not(:disabled) {
+  animation: coin-pulse 2.2s ease-in-out infinite;
+}
+
+/* confirmation: one-shot achievement flash + radiating rays — rest opacity 0
+   so a reduced-motion kill leaves nothing visible */
+@keyframes win-flash {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.win-flash {
+  animation: win-flash 0.7s ease-out both;
+}
+
+@keyframes win-ray {
+  from {
+    opacity: 0.9;
+    transform: rotate(var(--ray)) scaleY(0.2);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--ray)) scaleY(1);
+  }
+}
+
+.win-ray {
+  animation: win-ray 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -296,10 +355,15 @@ select {
   .badge-pop,
   .consent-in,
   .menu-in,
+  .coin-scan,
+  .coin-pay,
+  .win-flash,
+  .win-ray,
   .drawer-in > * {
     animation: none !important;
   }
-  .sweep-run {
+  .sweep-run,
+  .coin-scan {
     opacity: 0 !important;
   }
 }

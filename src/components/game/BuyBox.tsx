@@ -11,9 +11,10 @@ import type { WishlistItem } from "@/lib/types";
 /**
  * E-com buy box (Flpkart/Amazon grammar, Crimson Arena skin): title, star
  * rating, stock badge, big price, genre/platform, description, quantity
- * stepper. Now live: Add to cart posts real quantity, Buy now adds then
- * routes to /cart, and the heart toggles the signed-in wishlist — all
- * through our own relay routes (401 → sign-in gate, never a fake action).
+ * stepper. Now live: Add to cart posts real quantity, Buy now hands off to
+ * /checkout?buy= (the island places the order at pay time), and the heart
+ * toggles the signed-in wishlist — all through our own relay routes (401 →
+ * sign-in gate, never a fake action).
  * Every mutation announces `counts:changed` so the navbar badges follow.
  */
 export default function BuyBox({
@@ -70,7 +71,7 @@ export default function BuyBox({
       </>,
     );
 
-  const addToCart = async (thenRoute: boolean) => {
+  const addToCart = async () => {
     if (cartBusy) return;
     setCartBusy(true);
     const r = await storeCall<{ message: string }>("POST", "/api/cart", {
@@ -84,10 +85,6 @@ export default function BuyBox({
       return;
     }
     announceCounts();
-    if (thenRoute) {
-      router.push("/cart");
-      return; // busy stays on — the route change is the spinner
-    }
     setCartBusy(false);
     setNote(
       <>
@@ -215,7 +212,7 @@ export default function BuyBox({
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => void addToCart(false)}
+          onClick={() => void addToCart()}
           disabled={!inStock || cartBusy}
           className="inline-flex h-12 flex-1 items-center justify-center gap-2 bg-accent px-7 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted disabled:hover:translate-y-0"
         >
@@ -224,7 +221,7 @@ export default function BuyBox({
         </button>
         <button
           type="button"
-          onClick={() => void addToCart(true)}
+          onClick={() => router.push(`/checkout?buy=${id}&qty=${qty}`)}
           disabled={!inStock || cartBusy}
           className="inline-flex h-12 flex-1 items-center justify-center border-2 border-heading px-7 font-semibold text-heading transition-colors duration-200 hover:border-accent hover:bg-accent hover:text-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted disabled:hover:bg-transparent"
         >

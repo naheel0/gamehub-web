@@ -11,9 +11,8 @@ import type { CartItem } from "@/lib/types";
 
 /**
  * Cart body: lines with a quantity stepper (1–99, resynced from source on a
- * rejected change), a DualShock panel + sticky summary rail, and an honest
- * checkout gate — the order flow needs a delivery address on file, so the
- * button explains that instead of faking a completed purchase. Counts
+ * rejected change), a DualShock panel + sticky summary rail, and a live
+ * hand-off to /checkout — addresses and payment happen there. Counts
  * announce to the navbar.
  */
 type State =
@@ -26,7 +25,6 @@ export default function CartClient() {
   const [state, setState] = useState<State>({ k: "loading" });
   const [busy, setBusy] = useState<number | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
-  const [checkoutNote, setCheckoutNote] = useState<string | null>(null);
 
   const read = (r: StoreResult<CartItem[]>) => {
     if (r.ok) setState({ k: "ready", items: Array.isArray(r.data) ? r.data : [] });
@@ -313,23 +311,12 @@ export default function CartClient() {
             </div>
           </dl>
 
-          <button
-            type="button"
-            onClick={() =>
-              setCheckoutNote(
-                "Checkout isn't live yet — but your address book is. Add a delivery address in your profile so your cart's ready to go.",
-              )
-            }
+          <Link
+            href="/checkout"
             className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-accent font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
           >
-            Checkout
-          </button>
-
-          {checkoutNote && (
-            <p role="status" className="mt-4 border-l-2 border-accent/60 bg-bg px-4 py-2.5 font-mono text-xs leading-relaxed text-muted">
-              {checkoutNote}
-            </p>
-          )}
+            Proceed to checkout
+          </Link>
         </div>
       </aside>
     </div>
