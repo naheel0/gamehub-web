@@ -4,20 +4,31 @@ import { AUTH_COOKIES, applyAuthCookies, backendFetch, tryRefresh } from "@/lib/
 
 /**
  * GET → who am I + badge counts, one client round trip.
- * No gh_access cookie → {user: null} without touching the backend.
- * Expired access (15 min) → one transparent retry through /api/Auth/refresh
- * using our relayed gh_refresh value (the backend reads it from its Cookie
- * header), rotating cookies onto this response. Network-level failure → 502
- * so the client keeps "unresolved" instead of claiming signed-out.
+ * No auth cookies at all → {user: null} without touching the backend.
+ * gh_access died (15-min max-age matches the JWT, so the browser deletes it)
+ * while gh_refresh survives → rotate through /api/Auth/refresh first — the
+ * backend reads the relayed value from its Cookie header — and land the
+ * rotated cookies on this response. Expired-but-present access → the same
+ * transparent retry on 401. Network-level failure → 502 so the client keeps
+ * "unresolved" instead of claiming signed-out.
  */
 export async function GET() {
   const store = await cookies();
-  const access = store.get(AUTH_COOKIES.access)?.value;
-  if (!access) return NextResponse.json({ user: null });
-
-  let token = access;
+  const originalAccess = store.get(AUTH_COOKIES.access)?.value;
+  let access = originalAccess;
   let rotated: string | undefined;
 
+  if (!access) {
+    const refresh = store.get(AUTH_COOKIES.refresh)?.value;
+    if (!refresh) return NextResponse.json({ user: null });
+    const renewed = await tryRefresh(refresh);
+    if (renewed.kind === "network") return NextResponse.json({ user: null }, { status: 502 });
+    if (renewed.kind !== "ok") return NextResponse.json({ user: null });
+    access = renewed.token;
+    rotated = renewed.rotated;
+  }
+
+  let token = access;
   let profile = await backendFetch("/api/Auth/profile", token);
   if (profile?.status === 401) {
     const refresh = store.get(AUTH_COOKIES.refresh)?.value;
@@ -41,7 +52,7 @@ export async function GET() {
   ]);
 
   const response = NextResponse.json({ user, cartCount, wishlistCount });
-  if (token !== access || rotated) applyAuthCookies(response, token, rotated);
+  if (token !== originalAccess || rotated) applyAuthCookies(response, token, rotated);
   return response;
 }
 

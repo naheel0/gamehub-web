@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCartSimple, Trash } from "@/components/ui/icons";
-import CartScene from "@/components/cart/CartScene";
+import GlbPanel from "@/components/three/GlbPanel";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall, type StoreResult } from "@/lib/store";
 import type { CartItem } from "@/lib/types";
@@ -274,7 +274,7 @@ export default function CartClient() {
         </ul>
       </div>
 
-      {/* rail — DualShock panel over the summary, sticky beside the list on desktop */}
+      {/* rail — GLB panel (DualShock haul) over the summary, sticky beside the list */}
       <aside className="h-max lg:sticky lg:top-24">
         <div className="relative h-44 overflow-hidden border border-line bg-surface sm:h-56 lg:h-64">
           <div
@@ -285,7 +285,7 @@ export default function CartClient() {
             aria-hidden="true"
             className="dither-glow pointer-events-none absolute top-1/2 left-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 opacity-70"
           />
-          <CartScene className="absolute inset-0" />
+          <GlbPanel src="/models/dualshock4.glb" fitSize={0.16} className="absolute inset-0" />
           <p className="absolute bottom-4 left-5 font-mono text-[11px] tracking-[0.2em] text-muted uppercase">
             The haul
           </p>

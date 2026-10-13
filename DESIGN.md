@@ -79,19 +79,9 @@ Tool routing (animation-orchestrator):
 - **three.js** — ember field in the hero: 420 additive points, low-power
   renderer, pauses off-view/off-tab, one frame under reduced motion, silent
   skip without WebGL, full dispose on unmount. Lazy client-only.
-- **three.js + GSAP** — the auth key (`auth/KeyScene`): primitive-composed
-  game key (torus bow, emissive icosahedron gem, cylinder shaft, box teeth,
-  5 orbiting shards) with a crimson point light; GSAP entrance drop-in
-  (`expo.out` 1.15s position / 1.35s rotation + camera `power3.out`) on the
-  OUTER group, per-frame idle (rotation, float, gem pulse) on the INNER
-  group — nested so entrance and idle never fight over one transform.
-  Pointer parallax trails the camera (fine pointers only). Same gates as
-  EmberField: reduced motion = one frame at rest, off-view/off-tab = loop
-  stops, WebGL failure = page stands without the key.
-- **three.js + GSAP** — the cart rail panel (`cart/CartScene`): the CC BY
-  4.0 PS4 DualShock 4 GLB (`public/models/dualshock4.glb`, normalized to a
-  real ~16 cm — the file ships in centimetre units, which would otherwise
-  clip behind the near plane) under the login scene's studio rig with a
+- **three.js + GSAP** — the reusable model panel (`three/GlbPanel`, used by
+  /cart + /signup): any CC BY GLB (arcade machine by Logotyp on signup,
+  PS4 DualShock 4 by JeppeHove-Nyborg on cart) under the login scene's studio rig with a
   crimson rim/spill, entrance drop-in (`expo.out`) composed through
   `enter.p`, idle sway/bob + breathing spill, pointer parallax trailing the
   camera, drag-to-rotate. Same gates as EmberField: reduced motion = one
@@ -169,11 +159,27 @@ with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 stagger; optional `heading`/`eyebrow`, reused on the detail page as
 "More from the arena"; cards are `next/link` → `/games/[id]`) ·
 `GenreRail` (counts) · `CtaBand` (grid floor + dither glow) ·
-`Footer` (build-year constant) · `Reveal`, `CountUp`, `icons` (Phosphor behind a client
+`Footer` (build-year constant; Profile in the nav column + a Legal link
+group → `/privacy` `/terms` `/refunds` `/cookies`) · `CookieConsent`
+(bottom-right corner card: `useSyncExternalStore` over
+`localStorage.gh_consent` — server + hydration see "dismissed" (nothing in
+SSR HTML), the card rises in once post-hydration via the `consent-in`
+keyframe (in the reduced-motion kill list); honest two-cookie copy, no
+fake preference toggles; dismissal stored browser-side only) ·
+`Reveal`, `CountUp`, `icons` (Phosphor behind a client
 boundary — Phosphor calls `createContext`, illegal in Server Components) ·
 `EmberField` · `CtaBand` is a client component (pointer-tracked glow) ·
 `game/GameCard` (shared grid card: art with `onError` fallback, genre tag,
-title, rating, INR price; used by `FeaturedGrid` and the catalog grid) ·
+title, rating, INR price; the link covers art + title only — a button
+cannot nest inside a link — and the data strip carries optional quick
+actions via the `actions` prop: catalog grid + detail related rail on,
+landing hero grid stays the pure poster card) · `game/CardActions`
+(client: icon cart quick-add (qty 1, "Added" check + aria-live) + wishlist
+heart in the card strip; one shared `GET /api/wishlist` per page load in
+a module-level Set read through `useSyncExternalStore` — SSR renders the
+neutral outline, a 24-card grid is one request; heart fills only after
+the server agrees, every mutation `announceCounts()`, 401 →
+`/login?next=<path>`) ·
 `game/ProductMedia` (stage + trailer/art tile rail; stage swaps are client
 state, `art-in` class reuse; trailer facade → click-to-play
 `youtube-nocookie.com` iframe, `autoplay=1` only after the click) ·
@@ -186,17 +192,22 @@ announces `counts:changed`, `role="status"`) ·
 (client state machine: skeleton / 401 gate / honest error + retry / empty /
 rows with Move to cart + Remove; `deal-in` row stagger, `role="status"`
 flash line; full-width list — the primitive heart panel was removed at the
-user's request) · `cart/CartClient` (same state machine + sticky rail: `CartScene`
-panel over the Summary, 1–99 stepper that resyncs from source after a
-rejected change, honest checkout gate note) · `cart/CartScene` (the CC BY
-4.0 PS4 DualShock 4 GLB by JeppeHove-Nyborg, `public/models/dualshock4.glb`
-— same studio rig as the login DualSense: RoomEnvironment PMREM, white key
+user's request) · `cart/CartClient` (same state machine + sticky rail: `GlbPanel`
+DualShock panel over the Summary, 1–99 stepper that resyncs from source after a
+rejected change, honest checkout gate note) · `three/GlbPanel` (the reusable
+CC BY model panel: any GLB in `public/models` via the `src` prop + a `fitSize`
+(metres) that normalizes mixed-unit GLBs so the fixed rig + 0.1 near plane
+behave identically — a 0.03-unit GLB would otherwise clip behind the near
+plane. Studio rig as the login DualSense: RoomEnvironment PMREM, white key
 + crimson rim/spill, idle sway/bob + breathing spill + pointer parallax +
-drag-to-rotate; no decal/finish work — the model ships its own materials.
-Lifecycle mirrors `ControllerScene`: WebGL try/catch, off-view/off-tab
+drag-to-rotate. Camera fit is **contain** (fits both dimensions) and
+**idempotent** — recomputed on every ResizeObserver tick from the captured
+model bbox, because the load-time canvas size is pre-layout. Lifecycle
+mirrors `ControllerScene`: WebGL try/catch, off-view/off-tab
 pause, one frame under reduced motion, full dispose; load failure = glow +
-caption only. **Swap point for future models**: update `MODEL_URL` + the
-panel's CC BY caption; uncredited downloads must not ship) · `profile/ProfileClient` (one GET-profile probe gates
+caption only. **Swap point for future models**: point `src` at a GLB, set
+`fitSize`, add the CC BY caption; attribution comes from the GLB's embedded
+`asset.extras` (author/license/source — see CREDITS.md)) · `profile/ProfileClient` (one GET-profile probe gates
 the whole section: skeleton / 401 gate / error + retry; three ARIA tabs —
 Details / Addresses / Orders — panels stay mounted once visited so a
 half-typed address form survives a tab switch; Details = edit form via PUT,
@@ -219,20 +230,16 @@ signup = step 1 `send-otp` → step 2 OTP + names/phone/password with resend
 cooldown; client validation is the real gate — backend DTOs have none;
 backend errors surface verbatim via `role="alert"`; success swaps in a
 signed-in panel, `?next=` read client-side at click with open-redirect
-guard) · `auth/KeyScene` (the 3D key: three.js primitives — torus bow,
-icosahedron gem, cylinder shaft, box teeth, 5 orbiting tetrahedron shards;
-emissive crimson gem + point light; nested groups so the GSAP entrance
-drop-in (`expo.out`) and per-frame idle never share a transform; EmberField
-lifecycle discipline: WebGL try/catch, off-view/off-tab pause, one frame
-under reduced motion, full dispose) · `auth/ControllerScene` (login only —
-signup keeps the Key): the CC BY 4.0 DualSense GLB by Taohid Animation
+guard) · `auth/ControllerScene` (login only;
+signup uses `three/GlbPanel` with the arcade machine): the CC BY 4.0
+DualSense GLB by Taohid Animation
 (`public/models/dualsense.glb`, 6 MB, lazy client load) in the studio's
 **Midnight Black** finish — recolor + canvas-drawn △○×□ decal projection
 (`DecalGeometry`) ported from the dualsense-controller project; RoomEnvironment
 PMREM rig + arena crimson spill light; idle sway + pointer parallax +
 **drag-to-rotate** (fine pointers; `touch-action: pan-y` keeps vertical
 swipes scrolling); GSAP entrance composes through an `enter.p` progress,
-never over the per-frame transforms; same lifecycle gates as KeyScene.
+never over the per-frame transforms; same lifecycle gates as GlbPanel.
 Model failure/WebGL absence = empty panel, page stands).
 
 ## Registry sources
@@ -291,8 +298,10 @@ the **shadcn MCP** (registry view + audit checklist):
 - `not-found.tsx` ("Not in the arena") and `games/[id]/error.tsx` (honest
   API-down boundary) are shared/global.
 - `/login` and `/signup` — fully static (○); split `min-h-svh` grid: form
-  left ("Enter the arena" / "Claim your key" + `AuthForm`), `KeyScene`
-  panel right (slim `h-44` band above the form on mobile). `?next=` is read
+  left ("Enter the arena" / "Press start" + `AuthForm`), 3D panel right —
+  login = `ControllerScene` DualSense, signup = `GlbPanel` arcade machine
+  (Logotyp, "Insert coin"; caption + credit stack in the mobile `h-52`
+  band below the fixed nav, split across the full-height desktop panel). `?next=` is read
   client-side at click time (keeps the page static; `//`-guard blocks open
   redirects). Auth itself runs through **route-handler proxies**
   (`/api/auth/login`, `/api/auth/send-otp`, `/api/auth/verify-and-register`)
@@ -312,10 +321,12 @@ the **shadcn MCP** (registry view + audit checklist):
   call fails.
 - `/wishlist` and `/cart` — static (○) shells: poster heading + panel
   render instantly; the list body resolves client-side because both are
-  per-account. `/wishlist` = heading + full-width `WishlistClient` (the
-  heart scene panel was removed at the user's request). `/cart` = poster heading band (dither glow + grid floor — the
+  per-account. `/wishlist` = poster heading + Steam Deck `GlbPanel` rail
+  (the user-approved Phase-2 slot; CC BY caption — wallmasterr) + full-width
+  `WishlistClient` (the old heart scene panel was removed at the user's
+  request). `/cart` = poster heading band (dither glow + grid floor — the
   panel grammar carried as type: this is the app's most task-focused page)
-  + `CartClient` (list left, sticky rail right: `CartScene` DualShock panel
+  + `CartClient` (list left, sticky rail right: `GlbPanel` DualShock panel
   + Summary). Five **store relay**
   routes (`/api/wishlist[...]`, `/api/cart[...]`) forward to the backend
   with the httpOnly access token via the shared `relay()` in
@@ -338,6 +349,20 @@ the **shadcn MCP** (registry view + audit checklist):
   `OrderDto`s). Five more relay routes (`/api/profile`, `/api/addresses[...]`,
   `/api/orders`) on the same `relay()` contract; address paths validated as
   GUIDs before touching upstream. The navbar account chip links here.
+- `/privacy`, `/terms`, `/refunds`, `/cookies` — static (○) legal pages
+  under an `(legal)` route-group layout (Navbar + narrow prose column +
+  Footer, shared `legal-ui.tsx` prose primitives). Copy is limited to
+  verified facts: exactly two httpOnly session cookies (`gh_access`
+  15 min / `gh_refresh` 7 d) plus two browser-local records
+  (`gh_consent`, `gh_terms`), zero analytics/tracking, collection table
+  mirrors only what the backend DTOs require (email, name, phone,
+  password, addresses, orders, cart/wishlist), refunds = contact-based
+  7-day window (`contact@gamehub.com` + order ID — no refund flow exists
+  to claim), Terms set 18+ eligibility. Signup step 2 gates
+  `verify-and-register` behind a required Terms/Privacy checkbox
+  (client-side gate; no backend consent endpoint yet, so the receipt —
+  policy version + timestamp — is written to `localStorage.gh_terms`).
+  `CookieConsent` mounts once in the root layout (see Components).
 
 ## Known ceiling
 

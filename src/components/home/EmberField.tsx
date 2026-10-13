@@ -91,7 +91,7 @@ export default function EmberField({ className }: { className?: string }) {
       width = host.clientWidth;
       height = host.clientHeight;
       if (!width || !height) return;
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height); // sets CSS size too — without it the buffer overflows the host on scaled displays (125% DPR)
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };

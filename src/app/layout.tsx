@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, Barlow, JetBrains_Mono } from "next/font/google";
+import CookieConsent from "@/components/layout/CookieConsent";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -64,7 +65,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         with the finish review, the verdict, DESIGN.md, and every shipping
         raster carrying its provenance.
       */}
-      <body className="grain min-h-full flex flex-col">{children}</body>
+      <body className="grain min-h-full flex flex-col">
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }

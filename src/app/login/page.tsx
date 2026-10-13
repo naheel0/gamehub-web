@@ -34,7 +34,7 @@ export default function LoginPage() {
         </div>
 
         {/* key side: slim band on mobile, full panel on desktop */}
-        <div className="relative order-1 h-44 overflow-hidden border-b border-line lg:order-2 lg:h-auto lg:border-b-0 lg:border-l">
+        <div className="relative order-1 mt-16 h-52 overflow-hidden border-b border-line lg:order-2 lg:mt-0 lg:h-auto lg:border-b-0 lg:border-l">
           <div
             aria-hidden="true"
             className="dither-glow pointer-events-none absolute top-1/2 left-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 opacity-70"

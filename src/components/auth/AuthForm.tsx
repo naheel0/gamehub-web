@@ -35,6 +35,8 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [reveal, setReveal] = useState(false);
+  const [agreed, setAgreed] = useState(false); // signup step 2: Terms + Privacy consent
+  const [consentError, setConsentError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const otpRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +110,10 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   };
 
   const submitRegister = async () => {
+    if (!agreed) {
+      setConsentError("Agree to the Terms of Service and Privacy Policy to continue.");
+      return;
+    }
     const e: Partial<Record<Field, string>> = {};
     if (!/^\d{6}$/.test(values.otp.trim())) e.otp = "Enter the 6-digit code from your email.";
     if (!values.firstName.trim()) e.firstName = "Enter your first name.";
@@ -131,6 +137,16 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     if (!r.ok) {
       setServerError(r.message ?? "Registration failed. Try again.");
       return;
+    }
+    // Consent receipt — lives in this browser only; ponytail: no backend
+    // endpoint records consent yet, move it server-side when one exists
+    try {
+      localStorage.setItem(
+        "gh_terms",
+        JSON.stringify({ agreedAt: new Date().toISOString(), version: "2026-10-12" }),
+      );
+    } catch {
+      // storage blocked: the gate above still enforced consent
     }
     setUser(r.user ?? {});
   };
@@ -400,6 +416,49 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
               className={`mt-2 ${inputCls}`}
             />
             {err("confirmPassword")}
+          </div>
+
+          <div className="mt-6">
+            <label htmlFor="auth-consent" className="flex cursor-pointer items-start gap-3">
+              <input
+                id="auth-consent"
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  if (consentError) setConsentError(null);
+                }}
+                aria-invalid={!!consentError}
+                className="mt-0.5 h-4 w-4 shrink-0"
+                style={{ accentColor: "var(--color-accent)" }}
+              />
+              <span className="text-xs leading-relaxed text-muted">
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+            {consentError && (
+              <p role="alert" className="mt-1.5 font-mono text-[11px] text-accent">
+                {consentError}
+              </p>
+            )}
           </div>
 
           <button

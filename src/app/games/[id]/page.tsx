@@ -88,6 +88,7 @@ export default async function GamePage({ params }: Props) {
             games={related}
             heading="More from the arena"
             eyebrow="Same shelf first, then the top ratings"
+            actions
           />
         )}
       </main>

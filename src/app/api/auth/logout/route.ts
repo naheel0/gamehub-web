@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { API_BASE } from "@/lib/api";
-import { AUTH_COOKIES } from "@/lib/auth";
+import { AUTH_COOKIES, tryRefresh } from "@/lib/auth";
 
 /**
  * POST → sign out. One backend call does everything (verified in source):
@@ -11,7 +11,17 @@ import { AUTH_COOKIES } from "@/lib/auth";
  */
 export async function POST() {
   const store = await cookies();
-  const access = store.get(AUTH_COOKIES.access)?.value;
+  let access = store.get(AUTH_COOKIES.access)?.value;
+
+  if (!access) {
+    // gh_access dies at 15 min — rotate once so the backend logout can still
+    // revoke the server-side session; a dead refresh means nothing to revoke
+    const refresh = store.get(AUTH_COOKIES.refresh)?.value;
+    if (refresh) {
+      const renewed = await tryRefresh(refresh);
+      if (renewed.kind === "ok") access = renewed.token;
+    }
+  }
 
   if (access) {
     try {

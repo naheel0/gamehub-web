@@ -218,9 +218,10 @@ type RelayMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 /**
  * Forward one signed-in store call (cart, wishlist, profile, addresses,
- * orders) with the
- * signed-in user's token: one transparent refresh retry on 401 (cookie
- * rotation lands on this response), honest status passthrough otherwise.
+ * orders) with the signed-in user's token: rotate-first when gh_access has
+ * already died (15-min max-age), then one transparent refresh retry on 401
+ * (cookie rotation lands on this response), honest status passthrough
+ * otherwise.
  * 401 = genuinely signed out or session dead; 502 = we couldn't reach the
  * store — the client keeps those apart so it never claims a false sign-out.
  */
@@ -230,11 +231,29 @@ export async function relay(
   body?: unknown,
 ): Promise<NextResponse> {
   const store = await cookies();
-  const access = store.get(AUTH_COOKIES.access)?.value;
-  if (!access) return NextResponse.json({ message: "Sign in to continue." }, { status: 401 });
+  const originalAccess = store.get(AUTH_COOKIES.access)?.value;
+  let access = originalAccess;
+  let rotated: string | undefined;
+
+  // gh_access dies with the JWT (15-min max-age), so a missing cookie is also
+  // what a normal expiry looks like — a surviving gh_refresh means the session
+  // may still be alive, so rotate instead of forcing a sign-in. No gh_refresh
+  // at all is a genuinely signed-out caller.
+  if (!access) {
+    const refresh = store.get(AUTH_COOKIES.refresh)?.value;
+    if (!refresh) return NextResponse.json({ message: "Sign in to continue." }, { status: 401 });
+    const renewed = await tryRefresh(refresh);
+    if (renewed.kind === "network") {
+      return NextResponse.json({ message: OFFLINE_MSG }, { status: 502 });
+    }
+    if (renewed.kind !== "ok") {
+      return NextResponse.json({ message: "Your session has expired. Sign in again." }, { status: 401 });
+    }
+    access = renewed.token;
+    rotated = renewed.rotated;
+  }
 
   let token = access;
-  let rotated: string | undefined;
   let res = await backendFetch(path, token, { method, body });
 
   if (res?.status === 401) {
@@ -256,6 +275,6 @@ export async function relay(
     status: res.status,
     headers: { "Content-Type": "application/json" },
   });
-  if (token !== access || rotated) applyAuthCookies(response, token, rotated);
+  if (token !== originalAccess || rotated) applyAuthCookies(response, token, rotated);
   return response;
 }

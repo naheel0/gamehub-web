@@ -7,20 +7,31 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import gsap from "gsap";
 
 /**
- * The cart panel scene (threejs-skills): the CC BY 4.0 PS4 DualShock 4 GLB
- * by JeppeHove-Nyborg under the same studio rig as the login DualSense —
- * RoomEnvironment PMREM, white key + crimson rim/spill — minus the
- * DualSense-specific finish/decal work (this model ships its own materials).
- * Idle sway + bob + breathing spill + pointer parallax + drag-to-rotate
- * (fine pointers; touch-action pan-y). Lifecycle mirrors ControllerScene:
- * WebGL try/catch, pause off-view/off-tab, one frame under reduced motion,
- * full dispose. Load failure leaves the panel as glow + caption — honest
- * absence, never a broken page.
+ * The reusable CC BY model panel (threejs-skills / threejs-animation). One
+ * studio rig + lifecycle for any GLB in `public/models` — RoomEnvironment
+ * PMREM, white key + crimson rim/spill, entrance through `enter.p`, idle
+ * sway + bob + breathing spill, pointer parallax, drag-to-rotate (fine
+ * pointers, touch-action pan-y). Mirrors ControllerScene's gates: WebGL
+ * try/catch, pause off-view/off-tab, one frame under reduced motion, full
+ * dispose. Load failure leaves the panel as glow + caption — honest absence.
+ *
+ * Swap point for future models: point `src` at any GLB in `public/models` and
+ * pass the author + Sketchfab link for the CC BY caption (attribution is
+ * required, so the caller renders the credit line, not this component).
+ * `fitSize` is the real-world size the model is normalized to (metres) — it
+ * keeps the fixed light rig and the 0.1 near plane behaving identically
+ * across models that ship in mixed centimetre/metre units.
  */
-
-const MODEL_URL = "/models/dualshock4.glb";
-
-export default function CartScene({ className }: { className?: string }) {
+export default function GlbPanel({
+  src,
+  fitSize = 0.16,
+  className,
+}: {
+  src: string;
+  /** Longest-dimension target in metres — ~0.16 controller, ~0.4 console. */
+  fitSize?: number;
+  className?: string;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,13 +91,31 @@ export default function CartScene({ className }: { className?: string }) {
 
     let width = 0;
     let height = 0;
+    // model's world-space size + the half-frame height it must fit inside —
+    // set on load, then used to (re)fit the camera at any panel size
+    let modelSize: THREE.Vector3 | null = null;
+    let halfH = 0;
+    const fit = () => {
+      if (!modelSize) return;
+      // distance to fit the model within the panel on both axes (contain),
+      // with margin: at distance d the visible half-extent is d·halfH vertical
+      // and d·halfW horizontal, so d = modelHalfExtent / frameHalfExtent.
+      // Idempotent — safe to run on every resize.
+      const halfW = halfH * (width / height || 1);
+      const dist = Math.max(modelSize.y / 2 / halfH, modelSize.x / 2 / halfW) * 1.9; // margin covers the idle bob (+/- 4px) clear of the captions
+      camera.position.z = dist;
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    };
     const resize = () => {
       width = host.clientWidth;
       height = host.clientHeight;
       if (!width || !height) return;
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height); // sets CSS size too — without it the buffer overflows the host on scaled displays (125% DPR)
       camera.aspect = width / height;
+      halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2); // world units per 1.0 at z=0
       camera.updateProjectionMatrix();
+      fit(); // re-fit against the real panel size (load size is pre-layout)
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -94,7 +123,7 @@ export default function CartScene({ className }: { className?: string }) {
 
     const cleanup: (() => void)[] = [];
 
-    // The arena breathes — crimson spill pulses under the grips
+    // The arena breathes — crimson spill pulses under the model
     const breathe = reduce
       ? null
       : gsap.to(spill, { intensity: 10.5, duration: 2.6, yoyo: true, repeat: -1, ease: "sine.inOut" });
@@ -106,7 +135,7 @@ export default function CartScene({ className }: { className?: string }) {
 
     let disposed = false;
     new GLTFLoader().load(
-      MODEL_URL,
+      src,
       (gltf) => {
         if (disposed) {
           disposeGltf(gltf.scene);
@@ -114,28 +143,19 @@ export default function CartScene({ className }: { className?: string }) {
         }
         const model = gltf.scene;
 
-        // the GLB ships in centimetre-ish units (~0.03) — normalize to a
-        // real ~16 cm controller so the shared light rig and the 0.1 near
-        // plane behave exactly like the login DualSense scene
+        // GLBs ship in mixed units — normalize to a real-world size so the
+        // fixed light rig and the 0.1 near plane behave the same for every
+        // model (a 0.03-unit GLB would otherwise clip behind the near plane)
         const raw = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
-        model.scale.setScalar(0.16 / Math.max(raw.x, raw.y, raw.z));
+        model.scale.setScalar(fitSize / Math.max(raw.x, raw.y, raw.z));
 
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        modelSize = box.getSize(new THREE.Vector3()); // world size post-normalize
         model.position.sub(center); // center at pivot origin
         pivot.add(model);
 
-        // fit camera to model (aspect-aware, same math as the login scene)
-        const vFov = THREE.MathUtils.degToRad(camera.fov);
-        const dist =
-          Math.max(
-            size.y / (2 * Math.tan(vFov / 2)),
-            size.x / (2 * Math.tan(vFov / 2) * (width / height || 1)),
-          ) * 1.9; // bigger multiplier = smaller controller in frame
-        camera.position.z = dist;
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
+        fit(); // frame against the real panel size (idempotent, re-runs on resize)
 
         if (reduce) {
           // one frame at rest — needs the fitted camera, so it lives here
@@ -259,7 +279,7 @@ export default function CartScene({ className }: { className?: string }) {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [src, fitSize]);
 
   return <div ref={hostRef} aria-hidden="true" className={className} />;
 }

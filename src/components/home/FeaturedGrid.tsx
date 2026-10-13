@@ -6,10 +6,13 @@ export default function FeaturedGrid({
   games,
   heading = "Top of the arena",
   eyebrow = "Highest rated in the live catalog",
+  actions = false,
 }: {
   games: Game[];
   heading?: string;
   eyebrow?: string;
+  /** Opt-in quick cart/wishlist actions on each card (related rail). */
+  actions?: boolean;
 }) {
   return (
     <section id="featured" className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8">
@@ -29,7 +32,7 @@ export default function FeaturedGrid({
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((g, i) => (
             <Reveal key={g.id} delay={i * 0.07} y={30} className="h-full">
-              <GameCard game={g} />
+              <GameCard game={g} actions={actions} />
             </Reveal>
           ))}
         </div>

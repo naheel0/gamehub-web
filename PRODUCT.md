@@ -33,11 +33,11 @@ The whole real catalog (20 titles) served live from the GameHub API — real gam
 
 ## Capabilities and Constraints
 
-- In scope now: landing (`/`), catalog (`/games` — URL-backed search, genre filter, sort, pagination over the API's verified params), product detail (`/games/[id]`), auth (`/login` + `/signup`, real OTP-verified accounts, JWT pair in httpOnly cookies — client JS never sees a token), wishlist (`/wishlist` — move-to-cart, remove) and cart (`/cart` — quantity stepper, remove, subtotal, honest checkout gate), profile (`/profile` — details edit, address book CRUD with default handling, order history), and the session-aware navbar (account chip links to `/profile` + Sign out, live Cart/Wishlist count badges linking to their pages; mobile drawer).
+- In scope now: landing (`/`), catalog (`/games` — URL-backed search, genre filter, sort, pagination over the API's verified params), product detail (`/games/[id]`), auth (`/login` + `/signup`, real OTP-verified accounts, JWT pair in httpOnly cookies — client JS never sees a token; signup gated behind a required Terms/Privacy consent checkbox), wishlist (`/wishlist` — move-to-cart, remove, Steam Deck CC BY panel rail) and cart (`/cart` — quantity stepper, remove, subtotal, honest checkout gate), catalog + related-rail cards carry quick cart/wishlist actions (heart state from one shared wishlist fetch; 401 routes to sign-in with a back-link), profile (`/profile` — details edit, address book CRUD with default handling, order history), the session-aware navbar (account chip links to `/profile` + Sign out, live Cart/Wishlist count badges linking to their pages; mobile drawer), a cookie-consent corner card (browser-local dismissal record; states the two real session cookies honestly), and the legal pages (`/privacy`, `/terms`, `/refunds`, `/cookies` — copy limited to verified behavior; refunds are contact-based with a 7-day window, `contact@gamehub.com`).
 - Out of scope (user-set / backend-gated): checkout completion (address book is ready; payment needs the Razorpay decision), password change (no backend endpoint), admin. Sessions auto-refresh transparently (`/api/auth/session` and the store relays retry once through the backend's refresh endpoint; refresh tokens are single-use, so concurrent 401s share one refresh call).
 - Data shape (verified): list `GET /api/Games?page&pageSize` → `{success, message, data:{items:[…]}}` envelope; detail `GET /api/Games/{id}` returns the **bare game object** (`{id, name, genre, platform, price, rating, inStock, trailerUrl, imageUrls[], description}`); 99999/0 → 404, "abc" → 400.
 - Prices are `2999.00` style decimals → render as INR (`₹2,999`).
-- 3D models live in `public/models/` with a `CREDITS` line in the panel caption (CC BY requires it); the local `CREDITS.md` on the desktop asset folder tracks artists/sources — uncredited downloads don't ship.
+- 3D models live in `public/models/` with a `CREDITS` line in the panel caption (CC BY requires it); the local `CREDITS.md` on the desktop asset folder is regenerated from each GLB's embedded `asset.extras` (author/license/source — Sketchfab embeds it on Download), so every downloaded model is attributable.
 - Art is Steam CDN (`shared.fastly.steamstatic.com`), hotlinkable, must be allowed in `next.config` image domains.
 - Currency, catalog content, and API availability are backend-owned; the frontend never invents prices, ratings, stock, or claims.
 
@@ -52,7 +52,7 @@ The whole real catalog (20 titles) served live from the GameHub API — real gam
 - 20 real titles with genre, platform, INR price, 0–5 rating, stock flag, YouTube trailer embed, Steam header art — e.g. Elden Ring ₹3,999 (4.9), Cyberpunk 2077 ₹2,499 (4.3), The Witcher 3 ₹1,999 (4.9), God of War ₹3,499 (4.8).
 - Genres present: Action Adventure, RPG, Action RPG, Shooter, Racing, Sports, Open World, Sandbox, Survival Horror, Sci-Fi RPG, Action Survival.
 - Pinterest moodboard downloaded to `C:\Users\user\pinterest-vision-mcp\data\pinterest\20261010\dark_gaming_store_website_landing_page_u\` (4 dark gaming-store references reviewed).
-- Absences that must not be fabricated: no customer testimonials, no review counts, no discounts/deals data, no shipping or returns policy, no live user counts.
+- Absences that must not be fabricated: no customer testimonials, no review counts, no discounts/deals data, no shipping policy, no live user counts. (A refund policy exists at `/refunds` — contact-based, 7-day window — written by owner decision, not backend data.)
 
 ## Product Principles
 

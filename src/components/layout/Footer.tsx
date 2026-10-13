@@ -21,6 +21,9 @@ export default function Footer() {
           <Link href="/#genres" className="tracking-widest text-muted uppercase hover:text-heading">
             Genres
           </Link>
+          <Link href="/profile" className="tracking-widest text-muted uppercase hover:text-heading">
+            Profile
+          </Link>
           <Link href="#top" className="tracking-widest text-muted uppercase hover:text-heading">
             Back to top
           </Link>
@@ -32,11 +35,25 @@ export default function Footer() {
             Game titles, ratings and prices are supplied by GameHub. Artwork remains the
             property of its respective publishers.
           </p>
+          <nav aria-label="Legal" className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+            <Link href="/privacy" className="tracking-widest text-muted uppercase hover:text-heading">
+              Privacy
+            </Link>
+            <Link href="/terms" className="tracking-widest text-muted uppercase hover:text-heading">
+              Terms
+            </Link>
+            <Link href="/refunds" className="tracking-widest text-muted uppercase hover:text-heading">
+              Refunds
+            </Link>
+            <Link href="/cookies" className="tracking-widest text-muted uppercase hover:text-heading">
+              Cookies
+            </Link>
+          </nav>
           <a
             href="https://github.com/naheel0/GameHub-fullstack"
             rel="noopener noreferrer"
             target="_blank"
-            className="mt-3 inline-block text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
+            className="mt-4 inline-block text-heading underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"
           >
             Source on GitHub
           </a>

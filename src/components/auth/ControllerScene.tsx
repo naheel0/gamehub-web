@@ -13,7 +13,7 @@ import gsap from "gsap";
  * Midnight Black finish — recolor + redrawn △○×□ decals ported from the
  * studio — under a RoomEnvironment rig + the arena's crimson spill light. Idle sway +
  * pointer parallax + drag-to-rotate (fine pointers; touch-action pan-y so
- * a vertical swipe still scrolls the page). Lifecycle mirrors KeyScene /
+ * a vertical swipe still scrolls the page). Lifecycle mirrors GlbPanel /
  * EmberField: WebGL try/catch, pause off-view/off-tab, one frame under
  * reduced motion, full dispose (geometries, materials, textures). The GSAP
  * entrance composes through an `enter` progress so it never fights the
@@ -172,7 +172,7 @@ export default function ControllerScene({ className }: { className?: string }) {
       width = host.clientWidth;
       height = host.clientHeight;
       if (!width || !height) return;
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height); // sets CSS size too — without it the buffer overflows the host on scaled displays (125% DPR)
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };

@@ -187,7 +187,7 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
             {items.map((g, i) => (
               <Reveal key={g.id} delay={Math.min(i * 0.05, 0.4)} y={24} className="h-full">
                 <Tilt className="h-full">
-                  <GameCard game={g} />
+                  <GameCard game={g} actions />
                 </Tilt>
               </Reveal>
             ))}
