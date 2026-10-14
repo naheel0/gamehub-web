@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle, X } from "@/components/ui/icons";
-import { CoinArt } from "@/components/ui/EmptyArt";
+import { X } from "@/components/ui/icons";
+import { CoinArt, MedalArt } from "@/components/ui/EmptyArt";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, PENDING_KEY, storeCall } from "@/lib/store";
 import type { Order } from "@/lib/types";
@@ -187,11 +187,7 @@ export default function OrderConfirmation({ linkId, status, paymentId, reference
 
         <div className="relative">
           <p className={kicker}>Achievement unlocked</p>
-          <CheckCircle
-            className="badge-pop mx-auto mt-6 h-16 w-16 text-accent"
-            weight="fill"
-            aria-hidden
-          />
+          <MedalArt className="badge-pop mx-auto mt-6 h-16 w-16" />
           <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,4.4rem)] leading-[0.9] uppercase">
             Payment <span className="text-accent">confirmed</span>
           </h1>

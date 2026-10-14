@@ -424,6 +424,25 @@ select {
   animation: insert-blink 1.4s steps(1, end) infinite;
 }
 
+/* hero glints: the rest state IS the dim pose, so a reduced-motion kill
+   leaves the three sparkles quietly visible */
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(45deg);
+  }
+}
+
+.glint {
+  opacity: 0.45;
+  animation: glint 2.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -443,6 +462,7 @@ select {
   .heart-beat,
   .screen-flicker,
   .insert-blink,
+  .glint,
   .drawer-in > * {
     animation: none !important;
   }

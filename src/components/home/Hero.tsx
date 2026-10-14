@@ -6,6 +6,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { GlintArt } from "@/components/ui/EmptyArt";
 import { ArrowRight, Pause, Play, Star } from "@/components/ui/icons";
 import EmberField from "./EmberField";
 import { formatPrice, heroArtUrl } from "@/lib/format";
@@ -119,6 +120,10 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
           data-sweep
           className="sweep-run absolute inset-x-0 top-1/2 h-px -rotate-2 bg-accent opacity-0 shadow-[0_0_18px_2px_rgb(255_45_85_/_0.8)]"
         />
+        {/* arcade glints: live in the art layer (behind the content, so no
+            layout can collide) — md+ only, clear of the mobile copy */}
+        <GlintArt className="glint absolute top-[36%] right-[15%] hidden h-5 w-5 text-accent md:block" />
+        <GlintArt className="glint absolute top-[63%] right-[7%] hidden h-3.5 w-3.5 text-accent [animation-delay:0.9s] md:block" />
       </div>
 
       <EmberField className="absolute inset-0 -z-10" />
@@ -185,6 +190,9 @@ export default function Hero({ games, count }: { games: Game[]; count: number })
                   <div className="grid-floor absolute inset-0" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent to-surface/80" />
+                {/* shine on every deal-in: the card remounts per swap, so the
+                    twinkle restarts with it */}
+                <GlintArt className="glint absolute top-1.5 right-1.5 h-3 w-3 text-accent [animation-delay:1.4s]" />
               </div>
 
               {/* content column */}

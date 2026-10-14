@@ -1,9 +1,11 @@
 /**
- * Animated empty-state art (2D) — decorative companions beside the real
- * copy, never replacing it: always aria-hidden, motion lives in the
- * globals.css keyframes (coin-spin / heart-beat / screen-flicker /
- * insert-blink), each in the prefers-reduced-motion kill list so the art
- * stays complete at rest.
+ * Animated 2D art — hand-drawn SVG motifs (coin, heart, cabinet, medal,
+ * glint) used across empty states, the checkout poster, the payment check,
+ * the achievement card, and the landing hero. Decorative only: always
+ * aria-hidden beside real copy, motion lives in the globals.css keyframes
+ * (coin-spin / heart-beat / screen-flicker / insert-blink / glint, plus
+ * badge-pop reused on the medal), each in the prefers-reduced-motion kill
+ * list so the art stays complete at rest.
  */
 
 export function CoinArt({ className }: { className?: string }) {
@@ -38,6 +40,45 @@ export function HeartArt({ className }: { className?: string }) {
         strokeWidth="2.5"
         strokeLinejoin="round"
         className="text-muted"
+      />
+    </svg>
+  );
+}
+
+export function MedalArt({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden className={className}>
+      {/* ribbons — tucked behind the medal disc */}
+      <path d="M20 4l10 22-6 3L14 7z" className="text-muted" fill="currentColor" opacity="0.55" />
+      <path d="M44 4L34 26l6 3 10-22z" className="text-muted" fill="currentColor" opacity="0.55" />
+      {/* medal disc — the coin's accent language (dashed ring + accent core) */}
+      <circle cx="32" cy="42" r="17" className="text-accent" fill="currentColor" opacity="0.12" />
+      <circle cx="32" cy="42" r="17" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-muted" />
+      <circle
+        cx="32"
+        cy="42"
+        r="12.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="3 4"
+        className="text-accent"
+      />
+      <path
+        d="M32 34L33.9 39.4 39.6 39.5 35 43 36.7 48.5 32 45.2 27.3 48.5 29 43 24.4 39.5 30.1 39.4Z"
+        className="text-accent"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function GlintArt({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path
+        d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z"
+        fill="currentColor"
       />
     </svg>
   );
