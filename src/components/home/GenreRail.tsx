@@ -1,13 +1,15 @@
+import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
 
-export interface GenreItem {
+interface GenreItem {
   genre: string;
   count: number;
 }
 
 /**
- * Genre counts are informational tags, not controls — the catalog has no
- * filter route yet, so they never pretend to be clickable.
+ * Genre chips are real controls: counts come straight from the catalog and
+ * each chip deep-links into the URL-backed genre filter on /games (raw
+ * genre strings, encoded — the toolbar reads the same values).
  */
 export default function GenreRail({ items }: { items: GenreItem[] }) {
   if (items.length === 0) return null;
@@ -27,12 +29,14 @@ export default function GenreRail({ items }: { items: GenreItem[] }) {
         <Reveal className="mt-8">
           <ul className="flex flex-wrap gap-3">
             {items.map((g) => (
-              <li
-                key={g.genre}
-                className="flex items-center gap-3 border border-line bg-surface px-4 py-2.5 text-sm tracking-wider text-heading uppercase transition-colors duration-200 hover:border-accent/60"
-              >
-                {g.genre}
-                <span className="font-mono text-xs font-bold text-accent">{g.count}</span>
+              <li key={g.genre}>
+                <Link
+                  href={`/games?genre=${encodeURIComponent(g.genre)}`}
+                  className="flex items-center gap-3 border border-line bg-surface px-4 py-2.5 text-sm tracking-wider text-heading uppercase transition-colors duration-200 hover:border-accent hover:text-accent focus:border-accent focus:outline-none"
+                >
+                  {g.genre}
+                  <span className="font-mono text-xs font-bold text-accent">{g.count}</span>
+                </Link>
               </li>
             ))}
           </ul>

@@ -18,7 +18,7 @@ const REQUIRED_FIELDS = [
 ] as const;
 
 /** Fails loudly if the API contract drifts — never renders half a catalog. */
-export function assertPagedGames(json: ApiEnvelope<PagedGames>): PagedGames {
+function assertPagedGames(json: ApiEnvelope<PagedGames>): PagedGames {
   if (!json || json.success !== true) {
     throw new Error(`Games API envelope: ${json?.message ?? "no payload"}`);
   }
@@ -77,7 +77,7 @@ export async function fetchAllGames(): Promise<Game[] | null> {
 
 /** Catalog query params the live API actually supports (all verified):
  *  page, pageSize, search, sortBy=name|price|rating, sortOrder, genre. */
-export interface CatalogQuery {
+interface CatalogQuery {
   page?: number;
   pageSize?: number;
   search?: string;

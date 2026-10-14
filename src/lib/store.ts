@@ -38,3 +38,8 @@ export async function storeCall<T>(
 export function announceCounts() {
   window.dispatchEvent(new Event("counts:changed"));
 }
+
+/** localStorage key for the pending Razorpay draft — written by checkout,
+ * read/cleared by order-confirmation; one definition so a rename can never
+ * strand a payment between the two files. */
+export const PENDING_KEY = "gh_pending";

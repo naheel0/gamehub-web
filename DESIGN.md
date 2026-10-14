@@ -172,7 +172,7 @@ with rating, stock, dots and WCAG 2.2.2 pause — media-card grammar, see
 `aria-hidden` as decorative repetition) · `FeaturedGrid` (top 6, Reveal
 stagger; optional `heading`/`eyebrow`, reused on the detail page as
 "More from the arena"; cards are `next/link` → `/games/[id]`) ·
-`GenreRail` (counts) · `CtaBand` (grid floor + dither glow) ·
+`GenreRail` (counts; each chip deep-links the URL-backed filter: `/games?genre=`) · `CtaBand` (grid floor + dither glow) ·
 `Footer` (v2 poster colophon: three-lean beat (underline grammar echoed),
 four columns — brand + GitHub · Store · Help (About/FAQ/Contact/Profile) ·
 Legal (all 7 policies + cookies) — skew-lean hover links matching the

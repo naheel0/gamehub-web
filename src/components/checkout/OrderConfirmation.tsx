@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle, GameController, X } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/format";
-import { announceCounts, storeCall } from "@/lib/store";
+import { announceCounts, PENDING_KEY, storeCall } from "@/lib/store";
 import type { Order } from "@/lib/types";
 
 /**
@@ -34,8 +34,6 @@ type Draft = {
 type Phase = "working" | "paid" | "confirm-error" | "failed" | "restore-error" | "resume" | "nothing";
 
 type Attempt = { purchaseId: number; linkId: string; paymentId: string };
-
-const PENDING_KEY = "gh_pending";
 
 function readDraft(): Draft | null {
   try {

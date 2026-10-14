@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle, CreditCard, MapPin, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/format";
-import { storeCall, type StoreResult } from "@/lib/store";
+import { PENDING_KEY, storeCall, type StoreResult } from "@/lib/store";
 import type { Address, CartItem, Game, Order } from "@/lib/types";
 
 /**
@@ -45,8 +45,6 @@ type Draft = {
   linkId: string;
   shortUrl: string;
 };
-
-export const PENDING_KEY = "gh_pending";
 
 type Field = "fullName" | "addressLine1" | "addressLine2" | "city" | "state" | "zipCode" | "country" | "phone";
 const EMPTY: Record<Field, string> = {

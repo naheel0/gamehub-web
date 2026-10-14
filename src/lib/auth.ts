@@ -64,7 +64,7 @@ export function applyAuthCookies(
 }
 
 /** The backend ships refreshToken via Set-Cookie (body field nulled). */
-export function refreshFromSetCookie(headers: Headers): string | undefined {
+function refreshFromSetCookie(headers: Headers): string | undefined {
   const pair = headers
     .getSetCookie()
     .find((c) => c.startsWith("refreshToken="))
