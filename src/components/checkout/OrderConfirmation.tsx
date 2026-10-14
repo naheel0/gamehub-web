@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle, GameController, X } from "@/components/ui/icons";
+import { CheckCircle, X } from "@/components/ui/icons";
+import { CoinArt } from "@/components/ui/EmptyArt";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, PENDING_KEY, storeCall } from "@/lib/store";
 import type { Order } from "@/lib/types";
@@ -158,11 +159,7 @@ export default function OrderConfirmation({ linkId, status, paymentId, reference
   if (phase === "working") {
     return (
       <div className="border border-line bg-surface px-6 py-20 text-center">
-        <GameController
-          className="mx-auto h-10 w-10 animate-pulse text-accent motion-reduce:animate-none"
-          weight="fill"
-          aria-hidden
-        />
+        <CoinArt className="mx-auto h-12 w-12" />
         <p className="mt-5 font-display text-3xl uppercase">Checking your payment…</p>
         <p className="mt-2 font-mono text-xs text-muted">Hold tight — this takes a moment.</p>
       </div>

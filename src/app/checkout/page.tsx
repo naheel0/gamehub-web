@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import CheckoutClient from "@/components/checkout/CheckoutClient";
 import { fetchGame } from "@/lib/api";
 import { ArrowLeft } from "@/components/ui/icons";
+import { CoinArt } from "@/components/ui/EmptyArt";
 
 export const metadata: Metadata = {
   title: "Checkout — GameHub",
@@ -43,6 +44,10 @@ export default function CheckoutPage({ searchParams }: { searchParams: Search })
             aria-hidden="true"
             className="dither-glow pointer-events-none absolute top-1/2 left-1/3 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 opacity-60"
           />
+          {/* the poster moment: the eyebrow's coin spins while the body streams */}
+          <div className="pointer-events-none absolute top-1/2 right-6 hidden -translate-y-1/2 sm:block">
+            <CoinArt className="h-14 w-14" />
+          </div>
           <div className="relative">
             <p className="font-mono text-xs tracking-[0.16em] text-muted uppercase">
               Insert coin
