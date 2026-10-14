@@ -344,6 +344,86 @@ select {
   animation: win-ray 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* empty-state art: persistent decorative loops — each kill below rests at
+   a complete static frame (coin still, heart at rest, screen dim-on,
+   INSERT COIN legible) */
+@keyframes coin-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.coin-spin {
+  animation: coin-spin 4s linear infinite;
+}
+
+@keyframes heart-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.13);
+  }
+  24% {
+    transform: scale(1);
+  }
+  36% {
+    transform: scale(1.09);
+  }
+  48% {
+    transform: scale(1);
+  }
+}
+
+.heart-beat {
+  animation: heart-beat 1.9s ease-in-out infinite;
+}
+
+@keyframes screen-flicker {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  46% {
+    opacity: 0.3;
+  }
+  48% {
+    opacity: 0.08;
+  }
+  51% {
+    opacity: 0.3;
+  }
+  74% {
+    opacity: 0.18;
+  }
+  77% {
+    opacity: 0.3;
+  }
+}
+
+.screen-flicker {
+  animation: screen-flicker 3.4s linear infinite;
+}
+
+@keyframes insert-blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.12;
+  }
+}
+
+.insert-blink {
+  animation: insert-blink 1.4s steps(1, end) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -359,6 +439,10 @@ select {
   .coin-pay,
   .win-flash,
   .win-ray,
+  .coin-spin,
+  .heart-beat,
+  .screen-flicker,
+  .insert-blink,
   .drawer-in > * {
     animation: none !important;
   }

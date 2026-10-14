@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, ShoppingCartSimple, Trash } from "@/components/ui/icons";
+import { HeartArt } from "@/components/ui/EmptyArt";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall } from "@/lib/store";
 import type { WishlistItem } from "@/lib/types";
@@ -146,7 +147,7 @@ export default function WishlistClient() {
 
       {items.length === 0 ? (
         <div className="border border-line bg-surface px-6 py-12 text-center">
-          <Heart className="mx-auto h-8 w-8 text-muted" aria-hidden />
+          <HeartArt className="mx-auto h-16 w-16" />
           <h2 className="mt-4 font-display text-3xl uppercase">Nothing saved yet</h2>
           <p className="mx-auto mt-2 max-w-[46ch] text-text">
             Tap the heart on any title and it waits here until you&apos;re ready.

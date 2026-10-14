@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCartSimple, Trash } from "@/components/ui/icons";
+import { CoinArt } from "@/components/ui/EmptyArt";
 import GlbPanel from "@/components/three/GlbPanel";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall, type StoreResult } from "@/lib/store";
@@ -163,7 +164,7 @@ export default function CartClient() {
   if (items.length === 0) {
     return (
       <div className="border border-line bg-surface px-6 py-12 text-center">
-        <ShoppingCartSimple className="mx-auto h-8 w-8 text-muted" aria-hidden />
+        <CoinArt className="mx-auto h-16 w-16" />
         <h2 className="mt-4 font-display text-3xl uppercase">Your cart is empty</h2>
         <p className="mx-auto mt-2 max-w-[46ch] text-text">
           Find a title worth the arena — it&apos;ll wait for you right here.
