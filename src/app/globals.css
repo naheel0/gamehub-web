@@ -195,7 +195,8 @@ select {
   animation: marquee 46s linear infinite;
 }
 
-.marquee-track:hover {
+/* pause on hover anywhere over the band (host, not just the track) */
+.ticker-host:hover .marquee-track {
   animation-play-state: paused;
 }
 

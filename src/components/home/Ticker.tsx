@@ -20,7 +20,7 @@ export default function Ticker({ games }: { games: Game[] }) {
   );
 
   return (
-    <div aria-hidden="true" className="overflow-hidden border-y border-line bg-bg-soft py-3.5">
+    <div aria-hidden="true" className="ticker-host overflow-hidden border-y border-line bg-bg-soft py-3.5">
       <div className="marquee-track flex w-max">
         {row()}
         {row()}

@@ -11,7 +11,7 @@ import Link from "next/link";
 export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <main className="grid min-h-svh place-items-center px-5">
-      <div className="w-full max-w-md border border-line bg-surface p-8 text-center ring-1 ring-accent/40">
+      <div className="deal-in w-full max-w-md border border-line bg-surface p-8 text-center ring-1 ring-accent/40">
         <p className="font-mono text-[11px] tracking-[0.16em] text-muted uppercase">
           Signal lost
         </p>
