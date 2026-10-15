@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, Barlow, JetBrains_Mono } from "next/font/google";
 import CookieConsent from "@/components/layout/CookieConsent";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -25,6 +26,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "GameHub — the whole catalog, live",
   description:
     "Every GameHub title, rating and price in rupees — search, compare and find your next game.",
