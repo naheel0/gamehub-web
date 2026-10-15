@@ -161,7 +161,11 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     };
     return (
       <div className="border border-line bg-surface/80 p-8" role="status">
-        <CheckCircle className="h-10 w-10 text-accent" weight="fill" aria-hidden="true" />
+        <CheckCircle
+          className="h-10 w-10 text-accent badge-pop"
+          weight="fill"
+          aria-hidden="true"
+        />
         <h2 className="mt-4 font-display text-4xl leading-none uppercase">
           {mode === "login" ? "Welcome back" : "Welcome to the arena"}
           {user.firstName ? `, ${user.firstName}` : ""}

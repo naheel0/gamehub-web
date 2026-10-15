@@ -3,6 +3,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import AuthForm from "@/components/auth/AuthForm";
 import ControllerScene from "@/components/auth/ControllerScene";
+import Reveal from "@/components/ui/Reveal";
 import { ArrowLeft } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
@@ -17,20 +18,22 @@ export default function LoginPage() {
       <main id="top" className="grid min-h-svh lg:grid-cols-2">
         {/* form side */}
         <div className="order-2 flex flex-col justify-center px-5 py-14 sm:px-10 lg:order-1 lg:px-16">
-          <Link
-            href="/"
-            className="mb-8 inline-flex items-center gap-2 font-mono text-xs tracking-[0.14em] text-muted uppercase transition-colors duration-200 hover:text-accent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to the arena
-          </Link>
-          <h1 className="font-display text-[clamp(2.6rem,6vw,4rem)] leading-[0.9] uppercase">
-            Enter the <span className="text-accent">arena</span>
-          </h1>
-          <p className="mt-3 mb-8 max-w-[42ch] text-text">
-            Sign in to pick up where you left off.
-          </p>
-          <AuthForm mode="login" />
+          <Reveal y={20}>
+            <Link
+              href="/"
+              className="mb-8 inline-flex items-center gap-2 font-mono text-xs tracking-[0.14em] text-muted uppercase transition-colors duration-200 hover:text-accent"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to the arena
+            </Link>
+            <h1 className="font-display text-[clamp(2.6rem,6vw,4rem)] leading-[0.9] uppercase">
+              Enter the <span className="text-accent">arena</span>
+            </h1>
+            <p className="mt-3 mb-8 max-w-[42ch] text-text">
+              Sign in to pick up where you left off.
+            </p>
+            <AuthForm mode="login" />
+          </Reveal>
         </div>
 
         {/* key side: slim band on mobile, full panel on desktop */}

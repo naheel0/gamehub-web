@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Heart, ShoppingCartSimple } from "@/components/ui/icons";
+import { flyToCart } from "@/components/ui/FlyCoin";
 import { announceCounts, storeCall } from "@/lib/store";
 import type { WishlistItem } from "@/lib/types";
 
@@ -79,7 +80,7 @@ export default function CardActions({
     router.push(`/login?next=${encodeURIComponent(path)}`);
   };
 
-  const addToCart = async () => {
+  const addToCart = async (btn: HTMLElement) => {
     if (busy) return;
     setBusy("cart");
     const r = await storeCall<{ message: string }>("POST", "/api/cart", {
@@ -92,6 +93,7 @@ export default function CardActions({
       return;
     }
     announceCounts();
+    flyToCart(btn);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };
@@ -127,7 +129,7 @@ export default function CardActions({
       </span>
       <button
         type="button"
-        onClick={() => void addToCart()}
+        onClick={(e) => void addToCart(e.currentTarget)}
         disabled={!inStock || busy !== null}
         aria-label={
           added ? `${name} is in your cart` : `Add ${name} to cart`
@@ -135,7 +137,11 @@ export default function CardActions({
         className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors duration-200 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-muted"
       >
         {added ? (
-          <CheckCircle className="h-4 w-4 text-accent" weight="fill" aria-hidden />
+          <CheckCircle
+            className="h-4 w-4 text-accent badge-pop"
+            weight="fill"
+            aria-hidden
+          />
         ) : (
           <ShoppingCartSimple className="h-4 w-4" weight="bold" aria-hidden />
         )}
@@ -151,7 +157,7 @@ export default function CardActions({
         className="flex h-9 w-9 items-center justify-center border border-line transition-colors duration-200 hover:border-accent disabled:cursor-wait disabled:opacity-50"
       >
         <Heart
-          className={`h-4 w-4 transition-colors duration-200 ${saved ? "text-accent" : "text-muted"}`}
+          className={`h-4 w-4 transition-colors duration-200 ${saved ? "text-accent heart-pop" : "text-muted"}`}
           weight={saved ? "fill" : "regular"}
           aria-hidden
         />

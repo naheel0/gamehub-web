@@ -383,6 +383,12 @@ select {
   animation: heart-beat 1.9s ease-in-out infinite;
 }
 
+/* wishlist save: the same double-thump played once (the class only exists
+   while saved, so un-saving never re-triggers it) */
+.heart-pop {
+  animation: heart-beat 0.9s ease-in-out 1;
+}
+
 @keyframes screen-flicker {
   0%,
   100% {
@@ -460,6 +466,7 @@ select {
   .win-ray,
   .coin-spin,
   .heart-beat,
+  .heart-pop,
   .screen-flicker,
   .insert-blink,
   .glint,

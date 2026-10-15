@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, Minus, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
+import { flyToCart } from "@/components/ui/FlyCoin";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall } from "@/lib/store";
 import type { WishlistItem } from "@/lib/types";
@@ -71,7 +72,7 @@ export default function BuyBox({
       </>,
     );
 
-  const addToCart = async () => {
+  const addToCart = async (btn: HTMLElement) => {
     if (cartBusy) return;
     setCartBusy(true);
     const r = await storeCall<{ message: string }>("POST", "/api/cart", {
@@ -85,6 +86,7 @@ export default function BuyBox({
       return;
     }
     announceCounts();
+    flyToCart(btn);
     setCartBusy(false);
     setNote(
       <>
@@ -195,7 +197,11 @@ export default function BuyBox({
             aria-live="polite"
             className="w-10 text-center font-mono text-sm font-bold tabular-nums text-heading"
           >
-            {qty}
+            {/* keyed inner span: badge-pop replays per change while the live
+                region itself stays mounted for screen readers */}
+            <span key={qty} className="inline-block badge-pop">
+              {qty}
+            </span>
           </span>
           <button
             type="button"
@@ -212,11 +218,15 @@ export default function BuyBox({
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => void addToCart()}
+          onClick={(e) => void addToCart(e.currentTarget)}
           disabled={!inStock || cartBusy}
           className="inline-flex h-12 flex-1 items-center justify-center gap-2 bg-accent px-7 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted disabled:hover:translate-y-0"
         >
-          <ShoppingCartSimple className="h-5 w-5" weight="bold" aria-hidden />
+          <ShoppingCartSimple
+            className={`h-5 w-5 ${cartBusy ? "badge-pop" : ""}`}
+            weight="bold"
+            aria-hidden
+          />
           {cartBusy ? "Adding…" : "Add to cart"}
         </button>
         <button
@@ -236,7 +246,7 @@ export default function BuyBox({
           className="flex h-12 w-12 shrink-0 items-center justify-center border border-line transition-colors duration-200 hover:border-accent disabled:cursor-wait disabled:opacity-60"
         >
           <Heart
-            className={`h-5 w-5 transition-colors duration-200 ${saved ? "text-accent" : "text-muted"}`}
+            className={`h-5 w-5 transition-colors duration-200 ${saved ? "text-accent heart-pop" : "text-muted"}`}
             weight={saved ? "fill" : "regular"}
             aria-hidden
           />

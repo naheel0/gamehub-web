@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Minus, Plus, ShoppingCartSimple, Trash } from "@/components/ui/icons";
 import { CoinArt } from "@/components/ui/EmptyArt";
 import GlbPanel from "@/components/three/GlbPanel";
+import CountUp from "@/components/ui/CountUp";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall, type StoreResult } from "@/lib/store";
 import type { CartItem } from "@/lib/types";
@@ -243,7 +244,11 @@ export default function CartClient() {
                         aria-live="polite"
                         className="w-9 text-center font-mono text-sm font-bold tabular-nums text-heading"
                       >
-                        {item.quantity}
+                        {/* keyed inner span: badge-pop replays per confirmed
+                            change while the live region stays mounted */}
+                        <span key={item.quantity} className="inline-block badge-pop">
+                          {item.quantity}
+                        </span>
                       </span>
                       <button
                         type="button"
@@ -308,7 +313,9 @@ export default function CartClient() {
             </div>
             <div className="flex items-baseline justify-between gap-4">
               <dt className="tracking-[0.12em] text-muted uppercase">Subtotal</dt>
-              <dd className="text-xl font-bold tabular-nums text-accent">{formatPrice(subtotal)}</dd>
+              <dd className="text-xl font-bold tabular-nums text-accent">
+            <CountUp value={subtotal} duration={0.5} format={formatPrice} />
+          </dd>
             </div>
           </dl>
 
