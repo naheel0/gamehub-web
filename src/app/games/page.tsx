@@ -183,7 +183,12 @@ async function CatalogBody({ searchParams }: { searchParams: Promise<Search> }) 
         </div>
       ) : (
         <>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {/* keyed by the full query: any filter/page/sort change remounts
+              the grid so every Reveal replays instead of swapping silently */}
+          <div
+            key={`${q}|${genre}|${sort}|${page}`}
+            className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          >
             {items.map((g, i) => (
               <Reveal key={g.id} delay={Math.min(i * 0.05, 0.4)} y={24} className="h-full">
                 <Tilt className="h-full">

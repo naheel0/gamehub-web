@@ -190,7 +190,9 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
   const err = (f: Field) =>
     errors[f] ? (
-      <p className="mt-1.5 font-mono text-[11px] text-accent">{errors[f]}</p>
+      <p key={errors[f]} className="deal-in mt-1.5 font-mono text-[11px] text-accent">
+        {errors[f]}
+      </p>
     ) : null;
 
   return (
@@ -206,14 +208,15 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     >
       {serverError && (
         <p
+          key={serverError}
           role="alert"
-          className="mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text"
+          className="deal-in mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text"
         >
           {serverError}
         </p>
       )}
       {status && step === 2 && (
-        <p className="mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
+        <p key={status} className="deal-in mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
           {status} The code expires in 10 minutes.
         </p>
       )}
@@ -459,7 +462,7 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
               </span>
             </label>
             {consentError && (
-              <p role="alert" className="mt-1.5 font-mono text-[11px] text-accent">
+              <p key={consentError} role="alert" className="deal-in mt-1.5 font-mono text-[11px] text-accent">
                 {consentError}
               </p>
             )}

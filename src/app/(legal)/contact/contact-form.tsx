@@ -47,7 +47,7 @@ export default function ContactForm() {
 
   if (state === "sent") {
     return (
-      <div role="status" className="border border-line bg-surface px-7 py-10 text-center">
+      <div role="status" className="deal-in border border-line bg-surface px-7 py-10 text-center">
         <CheckCircle className="mx-auto h-10 w-10 text-accent" aria-hidden="true" />
         <p className="mt-5 font-mono text-xs tracking-[0.16em] text-accent uppercase">
           Message sent

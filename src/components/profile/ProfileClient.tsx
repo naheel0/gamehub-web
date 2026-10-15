@@ -213,13 +213,14 @@ export default function ProfileClient() {
         })}
       </div>
 
-      {/* details — always mounted */}
+      {/* details — always mounted. Active panel gains deal-in on tab change:
+          class-toggle replay with no remount, so form state survives */}
       <div
         role="tabpanel"
         id="profile-panel-details"
         aria-labelledby="profile-tab-details"
         hidden={tab !== "details"}
-        className="pt-6"
+        className={`pt-6 ${tab === "details" ? "deal-in" : ""}`}
       >
         <div className="flex flex-wrap items-center gap-3">
           <span className="border border-line bg-surface px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted uppercase">
@@ -239,12 +240,12 @@ export default function ProfileClient() {
           className="mt-5 max-w-2xl border border-line bg-surface/80 p-6 sm:p-8"
         >
           {formError && (
-            <p role="alert" className="mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
+            <p key={formError} role="alert" className="deal-in mb-5 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
               {formError}
             </p>
           )}
           {saved && (
-            <p role="status" className="mb-5 flex items-center gap-2 border-l-2 border-accent/60 bg-bg px-4 py-3 font-mono text-xs text-muted">
+            <p key={saved} role="status" className="deal-in mb-5 flex items-center gap-2 border-l-2 border-accent/60 bg-bg px-4 py-3 font-mono text-xs text-muted">
               <CheckCircle className="h-4 w-4 text-accent" weight="fill" aria-hidden />
               {saved}
             </p>
@@ -331,7 +332,7 @@ export default function ProfileClient() {
           id="profile-panel-addresses"
           aria-labelledby="profile-tab-addresses"
           hidden={tab !== "addresses"}
-          className="pt-6"
+          className={`pt-6 ${tab === "addresses" ? "deal-in" : ""}`}
         >
           <AddressBook />
         </div>
@@ -344,7 +345,7 @@ export default function ProfileClient() {
           id="profile-panel-orders"
           aria-labelledby="profile-tab-orders"
           hidden={tab !== "orders"}
-          className="pt-6"
+          className={`pt-6 ${tab === "orders" ? "deal-in" : ""}`}
         >
           <OrderHistory />
         </div>

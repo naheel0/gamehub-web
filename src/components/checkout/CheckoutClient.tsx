@@ -388,7 +388,7 @@ export default function CheckoutClient({ mode, buyId, buyGame, buyQty }: Props) 
                 Add where your wins get delivered — it&apos;s one form and you&apos;re set.
               </p>
               {formError && (
-                <p role="alert" className="mt-4 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
+                <p key={formError} role="alert" className="deal-in mt-4 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
                   {formError}
                 </p>
               )}
@@ -554,7 +554,13 @@ export default function CheckoutClient({ mode, buyId, buyGame, buyQty }: Props) 
                             {a.isDefault && (
                               <Star className="h-3.5 w-3.5 text-accent" weight="fill" aria-label="Default address" />
                             )}
-                            {sel && <CheckCircle className="h-4 w-4 text-accent" weight="fill" aria-hidden />}
+                            {sel && (
+                              <CheckCircle
+                                className="h-4 w-4 text-accent badge-pop"
+                                weight="fill"
+                                aria-hidden
+                              />
+                            )}
                           </span>
                         </span>
                         <address className="mt-2 not-italic text-sm leading-relaxed text-text">
@@ -605,7 +611,7 @@ export default function CheckoutClient({ mode, buyId, buyGame, buyQty }: Props) 
           ) : null}
 
           {payErr && (
-            <p role="alert" className="mt-3 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs leading-relaxed text-text">
+            <p key={payErr} role="alert" className="deal-in mt-3 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs leading-relaxed text-text">
               {payErr}
             </p>
           )}

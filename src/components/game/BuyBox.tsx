@@ -257,7 +257,7 @@ export default function BuyBox({
       {note && (
         <p
           role="status"
-          className="mt-4 max-w-[62ch] border-l-2 border-accent/60 bg-surface px-4 py-2.5 font-mono text-xs leading-relaxed text-muted"
+          className="deal-in mt-4 max-w-[62ch] border-l-2 border-accent/60 bg-surface px-4 py-2.5 font-mono text-xs leading-relaxed text-muted"
         >
           {note}
         </p>

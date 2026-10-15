@@ -271,7 +271,7 @@ export default function AddressBook() {
       </div>
 
       {flash && (
-        <p role="status" className="mt-4 border-l-2 border-accent/60 bg-surface px-4 py-2.5 font-mono text-xs text-muted">
+        <p key={flash} role="status" className="deal-in mt-4 border-l-2 border-accent/60 bg-surface px-4 py-2.5 font-mono text-xs text-muted">
           {flash}
         </p>
       )}
@@ -291,7 +291,7 @@ export default function AddressBook() {
           </h2>
 
           {formError && (
-            <p role="alert" className="mt-4 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
+            <p key={formError} role="alert" className="deal-in mt-4 border-l-2 border-accent bg-bg px-4 py-3 font-mono text-xs text-text">
               {formError}
             </p>
           )}
