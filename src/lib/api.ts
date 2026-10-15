@@ -1,10 +1,8 @@
 import { cacheLife } from "next/cache";
 import type { ApiEnvelope, Game, PagedGames } from "./types";
 
-// ponytail: env override for local dev, deployed URL as default.
-export const API_BASE =
-  process.env.BACKEND_API_URL ??
-  "https://gamehub1-hsdtbxdcfvfva3fw.centralindia-01.azurewebsites.net";
+export { API_BASE } from "./backend-url";
+import { API_BASE } from "./backend-url";
 
 const REQUIRED_FIELDS = [
   "id",

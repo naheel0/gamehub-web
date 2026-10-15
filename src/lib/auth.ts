@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { API_BASE } from "./api";
+import {
+  ACCESS_MAX_AGE,
+  AUTH_COOKIES,
+  COOKIE_BASE as cookieBase,
+  REFRESH_MAX_AGE,
+} from "./auth-constants";
+
+export { AUTH_COOKIES };
 
 /**
  * Server-side proxy for the auth API (same CORS reason every other fetch
@@ -17,12 +25,6 @@ import { API_BASE } from "./api";
  * - envelope {success, message, data}; access 15 min, refresh 7 days
  */
 
-export const AUTH_COOKIES = { access: "gh_access", refresh: "gh_refresh" } as const;
-
-// matches backend JwtSettings: AccessTokenExpirationMinutes 15 / RefreshTokenExpirationDays 7
-const ACCESS_MAX_AGE = 15 * 60;
-const REFRESH_MAX_AGE = 7 * 24 * 3600;
-
 const OFFLINE_MSG = "We couldn't reach the store right now. Refresh in a moment.";
 
 type AuthEnvelope = {
@@ -38,13 +40,6 @@ type AuthEnvelope = {
     status?: string;
     accessToken?: string;
   };
-};
-
-const cookieBase = {
-  httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
 };
 
 /** Set the JWT pair on our response — single source of cookie truth. */
@@ -146,22 +141,32 @@ export async function sendOtp(email: string): Promise<NextResponse> {
    Same CORS reason every fetch lives server-side: the browser only ever
    talks to these routes; the JWT pair stays in httpOnly cookies. */
 
-/** Raw backend call with the bearer token. null = network-level failure. */
+/** Raw backend call with the bearer token. null = network-level failure.
+ *  `stream` forwards the caller's body untouched — an admin upload rides
+ *  multipart/form-data, whose boundary lives in the incoming content-type;
+ *  undici requires `duplex: "half"` to stream a request body. */
 export async function backendFetch(
   path: string,
   token: string,
-  init?: { method?: string; body?: unknown },
+  init?: { method?: string; body?: unknown; contentType?: string | null; stream?: boolean },
 ): Promise<Response | null> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  let body: BodyInit | undefined;
+  if (init?.stream) {
+    if (init.contentType) headers["Content-Type"] = init.contentType;
+    body = init.body as ReadableStream;
+  } else if (init?.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(init.body);
+  }
   try {
     return await fetch(`${API_BASE}${path}`, {
       method: init?.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(init?.body !== undefined ? { "Content-Type": "application/json" } : {}),
-      },
-      body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+      headers,
+      body,
       cache: "no-store",
-    });
+      ...(init?.stream ? { duplex: "half" } : {}),
+    } as RequestInit);
   } catch {
     return null;
   }
@@ -224,11 +229,14 @@ type RelayMethod = "GET" | "POST" | "PUT" | "DELETE";
  * otherwise.
  * 401 = genuinely signed out or session dead; 502 = we couldn't reach the
  * store — the client keeps those apart so it never claims a false sign-out.
- */
+ * opts.request streams an incoming body (multipart admin upload) upstream
+ * untouched; opts.passthrough copies named response headers back (paging
+ * rides X-Total-Count, which a rebuilt response would otherwise drop). */
 export async function relay(
   method: RelayMethod,
   path: string,
   body?: unknown,
+  opts?: { request?: Request; passthrough?: string[] },
 ): Promise<NextResponse> {
   const store = await cookies();
   const originalAccess = store.get(AUTH_COOKIES.access)?.value;
@@ -253,10 +261,19 @@ export async function relay(
     rotated = renewed.rotated;
   }
 
-  let token = access;
-  let res = await backendFetch(path, token, { method, body });
+  const streaming = opts?.request !== undefined;
+  const contentType = opts?.request?.headers.get("content-type") ?? null;
+  const sendBody = streaming ? opts!.request!.body : body;
+  const forward = { method, body: sendBody, contentType, stream: streaming };
 
-  if (res?.status === 401) {
+  let token = access;
+  let res = await backendFetch(path, token, forward);
+
+  // a streamed body is consumed by the first attempt and cannot be replayed,
+  // so multipart calls do not get the transparent refresh retry: the proxy
+  // keeps gh_access fresh on every admin navigation, and a genuine 401 here
+  // means the caller should re-authenticate and resubmit the upload.
+  if (res?.status === 401 && !streaming) {
     const refresh = store.get(AUTH_COOKIES.refresh)?.value;
     const renewed = refresh ? await tryRefresh(refresh) : { kind: "dead" as const };
     if (renewed.kind === "network") {
@@ -267,7 +284,7 @@ export async function relay(
     }
     token = renewed.token;
     rotated = renewed.rotated;
-    res = await backendFetch(path, token, { method, body });
+    res = await backendFetch(path, token, forward);
   }
   if (!res) return NextResponse.json({ message: OFFLINE_MSG }, { status: 502 });
 
@@ -275,6 +292,12 @@ export async function relay(
     status: res.status,
     headers: { "Content-Type": "application/json" },
   });
+  // selected response headers must survive the relay (X-Total-Count carries
+  // paging for every admin list) instead of being rebuilt away
+  for (const name of opts?.passthrough ?? []) {
+    const value = res.headers.get(name);
+    if (value) response.headers.set(name, value);
+  }
   if (token !== originalAccess || rotated) applyAuthCookies(response, token, rotated);
   return response;
 }
