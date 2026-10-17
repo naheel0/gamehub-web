@@ -1,64 +1,20 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Heart, ShoppingCartSimple } from "@/components/ui/icons";
 import { flyToCart } from "@/components/ui/FlyCoin";
 import { announceCounts, storeCall } from "@/lib/store";
-import type { WishlistItem } from "@/lib/types";
+import { useWishlistIds, refreshWishlistIds } from "@/lib/wishlist-ids";
 
 /**
  * Quick cart + wishlist actions for grid cards (catalog + related rail).
  * Same honest contract as BuyBox: the heart only fills after the server
  * agrees, every mutation announces `counts:changed` for the navbar
  * badges, 401 routes to sign-in with a `?next=` back-link — no fake
- * optimistic state anywhere.
- *
- * One wishlist lookup per page load: the ids live in a module-level Set
- * that every card subscribes to (useSyncExternalStore — SSR renders the
- * neutral outline, no hydration mismatch), so a 24-card grid is one
- * request, not 24, and toggling one heart keeps every other card in
- * agreement.
+ * optimistic state anywhere. Wishlist ids ride the one shared store
+ * (lib/wishlist-ids): a 24-card grid is one request, not 24.
  */
-let ids: Set<number> | null = null;
-let idsPromise: Promise<void> | null = null;
-const listeners = new Set<() => void>();
-
-function publish(next: Set<number>) {
-  ids = next;
-  listeners.forEach((l) => l());
-}
-
-function loadIds(): Promise<void> {
-  idsPromise ??= storeCall<WishlistItem[]>("GET", "/api/wishlist").then((r) => {
-    const next = new Set<number>();
-    if (r.ok && Array.isArray(r.data)) for (const i of r.data) next.add(i.gameId);
-    publish(next);
-  });
-  return idsPromise;
-}
-
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => {
-    listeners.delete(l);
-  };
-};
-
-function useWishlistIds(): Set<number> | null {
-  // snapshot = the Set reference itself (publish swaps in a fresh one) —
-  // a boolean "resolved" flag would never change after a toggle and
-  // React would skip the re-render that flips the hearts
-  const current = useSyncExternalStore(
-    subscribe,
-    () => ids,
-    () => null,
-  );
-  useEffect(() => {
-    void loadIds(); // deduped — the promise is shared across every card
-  }, []);
-  return current;
-}
 
 export default function CardActions({
   id,
@@ -111,10 +67,9 @@ export default function CardActions({
       if (r.status === 401) gate();
       return;
     }
-    const next = new Set(savedIds);
-    if (adding) next.add(id);
-    else next.delete(id);
-    publish(next);
+    // the shared store re-reads on counts:changed; the local publish was only
+    // ever a stopgap — server truth now updates every heart
+    refreshWishlistIds();
     announceCounts();
   };
 

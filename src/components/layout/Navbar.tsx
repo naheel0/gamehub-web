@@ -170,11 +170,17 @@ export default function Navbar() {
 
   useEffect(() => {
     let live = true;
+    // after two straight failures the empty slot becomes "Sign in" — a real
+    // session comes back with the next counts:changed fetch (ponytail:
+    // event-driven recovery; no retry timer unless the backend outage
+    // actually strands users)
+    const failuresRef = { n: 0 };
     const loadSession = () =>
       fetch("/api/auth/session")
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((d: { user?: { firstName?: string; email?: string } | null; cartCount?: number | null; wishlistCount?: number | null }) => {
           if (!live) return;
+          failuresRef.n = 0;
           setSession(
             d.user
               ? {
@@ -188,7 +194,11 @@ export default function Navbar() {
           );
         })
         .catch(() => {
-          /* network/502 → keep current state: never claim signed-out we didn't verify */
+          /* network/502 → keep "pending" for the first miss; after the second
+             straight miss fall back to anon so the slot isn't empty forever */
+          if (!live) return;
+          failuresRef.n += 1;
+          if (failuresRef.n >= 2) setSession({ status: "anon" });
         });
     loadSession();
     // every cart/wishlist mutation announces → badges follow without refetch loops

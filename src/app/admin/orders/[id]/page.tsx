@@ -45,8 +45,10 @@ export default async function AdminOrderDetailPage({
   const addr = o.shippingAddress;
   const cityLine = [addr.city, addr.state].filter(Boolean).join(", ");
 
+  // contain-paint: long emails/ids and the min-width table must not widen the
+  // document scroll area (verified 390px leak on the list tables)
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl contain-paint">
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 border-b border-line pb-6">
         <div>
           <p className="font-mono text-[11px] tracking-[0.3em] break-all text-accent uppercase">

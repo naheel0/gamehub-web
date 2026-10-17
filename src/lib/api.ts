@@ -56,12 +56,20 @@ function assertPagedGames(json: ApiEnvelope<PagedGames>): PagedGames {
 async function fetchAllGamesCore(): Promise<Game[]> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 3600, expire: 86_400 });
-  const res = await fetch(`${API_BASE}/api/Games?page=1&pageSize=100`, {
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) throw new Error(`Games API ${res.status}`);
-  const json = (await res.json()) as ApiEnvelope<PagedGames>;
-  return assertPagedGames(json).items;
+  // the API caps pageSize at 100 — walk pages so a catalog past 100 titles
+  // isn't silently truncated
+  const items: Game[] = [];
+  for (let page = 1; page <= 100; page++) {
+    const res = await fetch(`${API_BASE}/api/Games?page=${page}&pageSize=100`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`Games API ${res.status}`);
+    const json = (await res.json()) as ApiEnvelope<PagedGames>;
+    const paged = assertPagedGames(json);
+    items.push(...paged.items);
+    if (paged.items.length === 0 || items.length >= paged.totalCount) break;
+  }
+  return items;
 }
 
 export async function fetchAllGames(): Promise<Game[] | null> {

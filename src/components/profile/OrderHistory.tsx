@@ -11,11 +11,13 @@ import type { Order } from "@/lib/types";
  * Order history: one card per order — id, date, status chip (text always,
  * colour never alone), item lines linked back to their games, the money
  * breakdown the backend computed, and the shipping snapshot as placed.
- * History rows already carry full detail, so there's no drill-down.
+ * History rows already carry full detail, so there's no drill-down. An
+ * unpaid Razorpay order rides the same payment-link flow checkout uses.
  */
 type State =
   | { k: "loading" }
   | { k: "error"; message: string }
+  | { k: "signin" }
   | { k: "ready"; orders: Order[] };
 
 const statusChip = (status: string) =>
@@ -31,8 +33,15 @@ const formatDate = (iso: string) => {
 
 export default function OrderHistory() {
   const [state, setState] = useState<State>({ k: "loading" });
+  const [paying, setPaying] = useState<number | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const read = (r: StoreResult<Order[]>) => {
+    // an expired session gets the honest sign-in gate, never a dead-end retry
+    if (!r.ok && r.status === 401) {
+      setState({ k: "signin" });
+      return;
+    }
     if (r.ok) setState({ k: "ready", orders: Array.isArray(r.data) ? r.data : [] });
     else setState({ k: "error", message: r.message });
   };
@@ -52,12 +61,47 @@ export default function OrderHistory() {
     storeCall<Order[]>("GET", "/api/orders").then(read);
   };
 
+  const pay = async (order: Order) => {
+    if (paying !== null) return;
+    setPaying(order.purchaseId);
+    setPayError(null);
+    const r = await storeCall<{ shortUrl: string }>(
+      "POST",
+      `/api/payments/create-link/${order.purchaseId}`,
+    );
+    setPaying(null);
+    if (!r.ok) {
+      setPayError(r.message);
+      return;
+    }
+    if (r.data?.shortUrl) window.location.assign(r.data.shortUrl);
+    else setPayError("The payment link didn't open — try again.");
+  };
+
   if (state.k === "loading") {
     return (
       <div aria-busy="true" className="grid gap-4">
         {[0, 1].map((i) => (
           <div key={i} className="h-52 animate-pulse border border-line bg-surface motion-reduce:animate-none" />
         ))}
+      </div>
+    );
+  }
+
+  if (state.k === "signin") {
+    return (
+      <div className="border border-line bg-surface px-6 py-10 text-center">
+        <Package className="mx-auto h-8 w-8 text-muted" weight="bold" aria-hidden />
+        <h2 className="mt-4 font-display text-3xl uppercase">Sign in to see your orders</h2>
+        <p className="mx-auto mt-2 max-w-[46ch] text-text">
+          Your session timed out. Sign in and you&apos;ll land straight back here.
+        </p>
+        <Link
+          href="/login?next=/profile"
+          className="mt-6 inline-flex h-11 items-center bg-accent px-6 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
+        >
+          Sign in
+        </Link>
       </div>
     );
   }
@@ -106,8 +150,9 @@ export default function OrderHistory() {
             <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-4">
               <h3 className="font-display text-2xl leading-none uppercase text-heading">
                 Order{" "}
-                <span className="font-mono text-base font-bold tracking-[0.08em] text-accent">
-                  {order.orderId.slice(0, 8).toUpperCase()}
+                <span className="break-all font-mono text-xs font-bold tracking-[0.04em] text-accent sm:text-sm">
+                  {/* full id: support asks for the whole thing, a stub fails */}
+                  {order.orderId.toUpperCase()}
                 </span>
               </h3>
               <time
@@ -124,7 +169,23 @@ export default function OrderHistory() {
               <p className="ml-auto text-lg font-bold tabular-nums text-accent">
                 {formatPrice(order.total)}
               </p>
+              {order.status === "Pending" && (
+                <button
+                  type="button"
+                  onClick={() => void pay(order)}
+                  disabled={paying === order.purchaseId}
+                  className="inline-flex h-10 items-center bg-accent px-5 font-mono text-xs tracking-[0.14em] text-bg uppercase transition duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+                >
+                  {paying === order.purchaseId ? "Opening payment…" : "Pay now"}
+                </button>
+              )}
             </header>
+
+            {payError && (
+              <p key={payError} role="alert" className="mt-3 border-l-2 border-accent bg-bg px-4 py-2.5 font-mono text-xs text-text">
+                {payError}
+              </p>
+            )}
 
             <ul className="divide-y divide-line">
               {order.items.map((item) => (

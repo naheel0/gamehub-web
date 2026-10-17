@@ -43,7 +43,9 @@ export async function GET() {
   if (!profile.ok) return NextResponse.json({ user: null });
 
   const user = await readUser(profile);
-  if (!user) return NextResponse.json({ user: null });
+  // a 200 we can't parse into the envelope shape is a backend lie — 502 keeps
+  // the client "unresolved" instead of claiming signed-out
+  if (!user) return NextResponse.json({ user: null }, { status: 502 });
 
   // badge counts — plain arrays; failure degrades to "no count", never a fake 0
   const [cartCount, wishlistCount] = await Promise.all([

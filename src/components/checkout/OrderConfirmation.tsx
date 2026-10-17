@@ -30,11 +30,15 @@ type Draft = {
   total: number;
   linkId: string;
   shortUrl: string;
+  /** written by checkout — a draft older than this isn't checkout state */
+  ts?: number;
 };
 
 type Phase = "working" | "paid" | "confirm-error" | "failed" | "restore-error" | "resume" | "nothing";
 
 type Attempt = { purchaseId: number; linkId: string; paymentId: string };
+
+const DRAFT_MAX_AGE_MS = 24 * 3_600_000;
 
 function readDraft(): Draft | null {
   try {
@@ -42,6 +46,9 @@ function readDraft(): Draft | null {
     if (!raw) return null;
     const d = JSON.parse(raw) as Partial<Draft>;
     if (typeof d.purchaseId !== "number" || typeof d.shortUrl !== "string") return null;
+    // stale draft: the payment attempt (and likely the tab) is long gone —
+    // "pick up where you left off" should never show yesterday's prices
+    if (typeof d.ts === "number" && Date.now() - d.ts > DRAFT_MAX_AGE_MS) return null;
     return d as Draft;
   } catch {
     return null;
@@ -115,7 +122,7 @@ export default function OrderConfirmation({ linkId, status, paymentId, reference
   useEffect(() => {
     // deferred so the first "working" paint commits before any setState;
     // clearTimeout on unmount makes the once-guard race-proof
-    const t = window.setTimeout(() => {
+    const t = window.setTimeout(async () => {
       if (started.current) return;
       started.current = true;
 
@@ -144,8 +151,26 @@ export default function OrderConfirmation({ linkId, status, paymentId, reference
       setPaidTotal(total);
 
       const paid = status === "paid" || (!!paymentId && !!effLinkId && !status);
-      if (paid && paymentId && effLinkId) void confirm(a);
-      else void restore(purchaseId);
+      if (paid && paymentId && effLinkId) {
+        void confirm(a);
+      } else if (status === "paid" && draft?.orderId) {
+        // callback says the link is paid but the payment id got lost —
+        // don't call a paid order unpaid: trust the order's real status
+        const o = await storeCall<Order>("GET", `/api/orders/${draft.orderId}`);
+        if (o.ok && o.data.status === "Confirmed") {
+          setDetail({
+            orderId: o.data.orderId,
+            items: o.data.items ?? [],
+            total: Number(o.data.total),
+          });
+          announceCounts();
+          setPhase("paid");
+        } else {
+          void restore(purchaseId);
+        }
+      } else {
+        void restore(purchaseId);
+      }
     }, 0);
     return () => window.clearTimeout(t);
     // run exactly once per mount; callback params are fixed for this visit

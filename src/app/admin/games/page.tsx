@@ -138,6 +138,14 @@ export default async function AdminGamesPage({
             placeholder="Search titles…"
             className="h-11 w-52 border border-line bg-bg px-3 font-mono text-sm text-text placeholder:text-muted"
           />
+          {/* sort/dir don't ride the GET inputs — carry non-default sort state
+              across a search submit so results don't silently reorder */}
+          {(sort !== "name" || dir !== "asc") && (
+            <>
+              <input type="hidden" name="sort" value={sort} />
+              <input type="hidden" name="dir" value={dir} />
+            </>
+          )}
           <button
             type="submit"
             className="h-11 shrink-0 border border-line px-4 font-mono text-xs tracking-[0.14em] text-heading uppercase transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
@@ -262,7 +270,11 @@ export default async function AdminGamesPage({
                       {g.rating}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="border border-line px-2 py-0.5 font-mono text-[10px] tracking-[0.12em] text-muted uppercase">
+                      <span
+                        className={`border px-2 py-0.5 font-mono text-[10px] tracking-[0.12em] uppercase ${
+                          g.inStock ? "border-line text-muted" : "border-accent text-accent"
+                        }`}
+                      >
                         {g.inStock ? "In stock" : "Out of stock"}
                       </span>
                     </td>

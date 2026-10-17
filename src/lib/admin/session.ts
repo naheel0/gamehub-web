@@ -60,5 +60,8 @@ export const requireAdmin = cache(async function requireAdmin(): Promise<AdminGa
   const user = env?.data;
   if (!user || typeof user.id !== "number") return { kind: "unreachable" };
   if (user.role !== ADMIN_ROLE) return { kind: "denied" };
+  // A blocked admin whose still-valid access token from the cache survives
+  // a block: the profile read is the honest source, so honor it.
+  if (typeof user.status === "string" && user.status !== "Active") return { kind: "denied" };
   return { kind: "admin", user: user as AdminSession };
 });

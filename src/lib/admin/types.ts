@@ -96,7 +96,3 @@ export const ORDER_STATUSES = [
 ] as const;
 export const ROLES = ["User", "Admin"] as const;
 export const ACCOUNT_STATUSES = ["Active", "Blocked"] as const;
-
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
-export type Role = (typeof ROLES)[number];
-export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];

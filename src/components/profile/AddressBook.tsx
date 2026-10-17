@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { MapPin, Pencil, Plus, Star, Trash } from "@/components/ui/icons";
 import { storeCall, type StoreResult } from "@/lib/store";
 import type { Address } from "@/lib/types";
@@ -15,6 +16,7 @@ import type { Address } from "@/lib/types";
 type State =
   | { k: "loading" }
   | { k: "error"; message: string }
+  | { k: "signin" }
   | { k: "ready"; addresses: Address[] };
 
 type Mode = { kind: "closed" } | { kind: "add" } | { kind: "edit"; addressId: string };
@@ -55,6 +57,11 @@ export default function AddressBook() {
   const [armed, setArmed] = useState<string | null>(null); // delete confirm
 
   const read = (r: StoreResult<Address[]>) => {
+    // an expired session gets the honest sign-in gate, never a dead-end retry
+    if (!r.ok && r.status === 401) {
+      setState({ k: "signin" });
+      return;
+    }
     if (r.ok) setState({ k: "ready", addresses: Array.isArray(r.data) ? r.data : [] });
     else setState({ k: "error", message: r.message });
   };
@@ -227,6 +234,26 @@ export default function AddressBook() {
         {[0, 1].map((i) => (
           <div key={i} className="h-44 animate-pulse border border-line bg-surface motion-reduce:animate-none" />
         ))}
+      </div>
+    );
+  }
+
+  if (state.k === "signin") {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="border border-line bg-surface px-6 py-10 text-center sm:col-span-2">
+          <MapPin className="mx-auto h-8 w-8 text-muted" weight="bold" aria-hidden />
+          <h2 className="mt-4 font-display text-3xl uppercase">Sign in to see your addresses</h2>
+          <p className="mx-auto mt-2 max-w-[46ch] text-text">
+            Your session timed out. Sign in and you&apos;ll land straight back here.
+          </p>
+          <Link
+            href="/login?next=/profile"
+            className="mt-6 inline-flex h-11 items-center bg-accent px-6 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
+          >
+            Sign in
+          </Link>
+        </div>
       </div>
     );
   }

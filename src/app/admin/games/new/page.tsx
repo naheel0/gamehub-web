@@ -6,6 +6,9 @@ import { createGame } from "@/lib/admin/actions";
 
 export const metadata: Metadata = { title: "New game — Admin" };
 
+// keep this page server-fresh every request (same opt-out as the layout)
+export const instant = false;
+
 export default function NewGamePage() {
   return (
     <div className="max-w-3xl">

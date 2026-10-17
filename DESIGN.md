@@ -215,7 +215,9 @@ rows with Move to cart + Remove; `deal-in` row stagger, `role="status"`
 flash line; full-width list — the primitive heart panel was removed at the
 user's request) · `cart/CartClient` (same state machine + sticky rail: `GlbPanel`
 DualShock panel over the Summary, 1–99 stepper that resyncs from source after a
-rejected change, live `Proceed to checkout` hand-off to `/checkout`) ·
+rejected change, armed two-step Clear cart above the list (count line + arm →
+accent "Confirm clear" + Cancel), live `Proceed to checkout` hand-off to
+`/checkout`) ·
 `checkout/CheckoutClient` (one island serves both modes — cart lines or
 `?buy=` single title: skeleton / 401 gate with `?next=` / honest error +
 retry / empty-cart / ready; HUD stage bar (Cart → Delivery & pay → Razorpay,
@@ -357,8 +359,12 @@ the **shadcn MCP** (registry view + audit checklist):
   wishlist counts (Bearer), with one transparent `/api/Auth/refresh` retry
   when the access token expired (relayed `gh_refresh` value sent as the
   backend's `refreshToken` Cookie; rotated pair re-applied); no cookie →
-  `{user:null}` with zero backend calls; network failure → 502 so the
-  client keeps "unresolved" rather than claiming signed-out. `POST
+  `{user:null}` with zero backend calls; network failure — or a 200 the
+  envelope decode can't trust — is 502, so the client keeps "unresolved"
+  rather than claiming signed-out. The navbar holds "pending" (empty slot)
+  through the first miss; after two straight misses it falls back to the
+  signed-out button, and a later `counts:changed` fetch restores the real
+  state. `POST
   /api/auth/logout` — backend `Logout` revokes all refresh tokens +
   blacklists the access jti in one call; our cookies clear even if that
   call fails.
@@ -379,7 +385,11 @@ the **shadcn MCP** (registry view + audit checklist):
   segments validated `^\d+$` before touching upstream. Refresh tokens are
   single-use backend-side, so `tryRefresh` dedupes concurrent 401s (navbar
   session + page fetch on the same load) into one call. Mutations announce
-  `counts:changed` (window event) → navbar badges re-resolve. The summary
+  `counts:changed` (window event) → navbar badges re-resolve and the shared
+  wishlist store (`lib/wishlist-ids` — one lookup shared by grid cards and
+  the buy box) re-reads, so hearts never drift between surfaces.
+  Whole-catalog reads walk the API's page cap (100/page) — a catalog past
+  the first page is never silently truncated. The summary
   rail hands off live via `Proceed to checkout` → `/checkout`.
 - `/checkout` — PPR (◐): static poster shell ("Insert coin" / Check **out**
   band) wraps a `<Suspense>` body that resolves `?buy=&qty=`
@@ -395,9 +405,19 @@ the **shadcn MCP** (registry view + audit checklist):
   Paid → `POST /api/payments/confirm-link` (`{purchaseId,
   razorpayPaymentLinkId, razorpayPaymentId}`; amount omitted — the backend
   derives it in paise) → achievement card; failed/cancelled →
-  `POST /api/payments/restore/{purchaseId}` puts the cart back; neither
-  path fabricates state (`confirm-link` trusts the caller by backend
-  design; a stale `restore` just 404s into the honest copy).
+  `POST /api/payments/restore/{purchaseId}` puts the cart back (restore
+  merges lines back into existing cart rows — it never duplicates
+  quantities). Neither path fabricates state, and the backend no longer
+  trusts the caller: `confirm-link` re-fetches the payment link from
+  Razorpay's API, checks the payment id against the link and the paid
+  amount against the order (fail closed — anything unconfirmed rejects
+  with an honest 400). One purchase = one Razorpay link: create-link
+  reuses a still-open link instead of minting a new one per retry,
+  persisted on the Purchase's payment row. The callback edge where the
+  link reports `paid` but the payment id went missing re-reads the real
+  order status before showing either card. The `gh_pending` draft carries
+  a timestamp and is discarded after 24h — "pick up where you left off"
+  never offers yesterday's prices.
 - The payment work rides the same `relay()` contract: six new routes
   (`/api/orders` POST + `/api/orders/buy-now` + `/api/orders/[orderId]` +
   `/api/payments/create-link/[purchaseId]` + `/api/payments/confirm-link` +
@@ -410,8 +430,13 @@ the **shadcn MCP** (registry view + audit checklist):
   `{success, data:{id, firstName, lastName, email, phone, role, status}}`;
   email conflict → 400 with the backend message surfaced verbatim),
   **Addresses** (full CRUD + `PUT {id}/default` — the address book checkout
-  was waiting on), **Orders** (`GET /api/Orders` bare array of full
-  `OrderDto`s). Five more relay routes (`/api/profile`, `/api/addresses[...]`,
+  was waiting on), **Orders** (`GET /api/Orders` bare array; the backend
+  pages internally — capped at 100/page — the UI still renders one list).
+  A dead session gets the same sign-in gate every gated surface gets
+  (`/login?next=/profile` — never a dead-end retry), order cards show the
+  full Razorpay-visible order id, and a Pending order rides the same
+  payment-link flow checkout uses ("Pay now" → `create-link` → Razorpay).
+  Five more relay routes (`/api/profile`, `/api/addresses[...]`,
   `/api/orders`) on the same `relay()` contract; address paths validated as
   GUIDs before touching upstream. The navbar account chip links here.
 - `/privacy`, `/terms`, `/refunds`, `/cookies` — static (○) legal pages
@@ -427,13 +452,19 @@ the **shadcn MCP** (registry view + audit checklist):
   `verify-and-register` behind a required Terms/Privacy checkbox
   (client-side gate; no backend consent endpoint yet, so the receipt —
   policy version + timestamp — is written to `localStorage.gh_terms`).
-  `CookieConsent` mounts once in the root layout (see Components).
+  **Contact** (`/contact`): no support endpoint exists behind the API, so
+  the form composes a prefilled `mailto:support@gamehub.com` from the
+  visitor's own mail client — the page says exactly that, the send
+  confirmation never claims "delivered" while nothing left the browser
+  (swap the mailto hop for a backend POST when support wants the inbox
+  wired). `CookieConsent` mounts once in the root layout (see Components).
 
 ## Admin appendix
 
 `/admin` is an appendix to Crimson Arena, not a second brand: same tokens,
 no new palette, no storefront nav leak (entry is the bare URL or the
-Admin-only row on `/profile`). `robots.txt` disallows `/admin`; pages carry
+Admin-only row on `/profile`). `robots.txt` disallows `/admin` and
+`/wishlist` (both per-account surfaces); pages carry
 `robots: {index: false}` and `export const instant = false` (every admin
 read touches cookies — never prerendered). `requireAdmin()` lives in the
 layout (tri-state: admin / denied→`/login?next=` / unreachable→honest
@@ -441,8 +472,11 @@ error); server actions re-assert by relaying to `[Authorize(Roles="Admin")]`
 endpoints — the backend is the authorization, never the UI.
 
 - **Shell:** left rail on desktop (wordmark + `AdminNav` + session footer
-  with email and ADMIN chip), top band under 640px. `AdminNav` marks the
-  active section with the leaning crimson tick + `aria-current`.
+  with email and ADMIN chip); below `lg` a sticky top band carries the same
+  nav inline as a horizontal scroller, so the 641–1023px band keeps every
+  section link (the rail swaps at the `lg` break, not an invented one).
+  `AdminNav` marks the active section with the leaning crimson tick +
+  `aria-current`.
 - **Type:** the same three voices at working sizes — display h1 (list
   `5xl/6xl`, record `4xl/5xl`), mono for every datum (ids, dates, money,
   chips, labels at `10–11px tracking-[0.16em|0.3em] uppercase`), Barlow
@@ -451,11 +485,14 @@ endpoints — the backend is the authorization, never the UI.
   sort glyph, armed-confirm state, error-banner border. Role/status/stock
   chips stay `border-line text-heading` — state is never a call to action.
 - **Tables:** all state in the URL (`?q&sort&dir&page` + entity filters),
-  defaults omitted; sortable headers are real links with `aria-sort` +
-  glyph; `CatalogPagination` reuse; `contain-paint` + `min-w` scroller so
-  table width never scrolls the 390px root; distinct unfiltered vs
-  filtered empty states with Clear; out-of-range page redirects to page 1
-  of the same filtered query.
+  defaults omitted; search forms carry hidden `sort`/`dir` inputs so a
+  submit never silently reorders; sortable headers are real links with
+  `aria-sort` + glyph; `CatalogPagination` reuse; `contain-paint` + `min-w`
+  scroller so table width never scrolls the 390px root (orders *detail*
+  page wears it too — long emails/ids and the min-width table); distinct
+  unfiltered vs filtered empty states with Clear; out-of-range page
+  redirects to page 1 of the same filtered query; list dates share one
+  `shortDate` helper (`lib/format`).
 - **Forms & mutations:** AuthForm input language (`border-line`, accent
   focus shadow). Reads are RSC; writes are server actions with PRG +
   `Flash` deal-in banners. Rejected submits keep typed values (controlled
@@ -464,11 +501,27 @@ endpoints — the backend is the authorization, never the UI.
   submit stays `type="submit"`, arm label names the target) for
   destructive verbs; order status is allowlisted to the backend enum
   before it leaves.
+- **Dashboard charts:** the aggregates from `api/Admin/dashboard` are drawn
+  as server-rendered bars only — a seven-day sales axis whose seven slots
+  are the real last 7 UTC calendar days (the backend's own day-boundary;
+  an absent day renders at ₹0, never a fabricated amount) and order-status
+  rows listing the full 7-value enum at 0 when the database is empty.
+  Accent = the peak bar; zero rows stay muted. No chart library, no
+  animation; sr-only amounts carry the values for screen readers.
 - **Deliberate absences:** backend `DELETE` order is not surfaced
-  (cancel by status, never erase); user block/activate/role/delete are
-  unwired pending the owner's call plus self-protection (an admin cannot
-  block, demote or delete themselves). Route tokens are the controllers'
+  (cancel by status, never erase). User verbs are wired with double-sided
+  self-protection: AdminService refuses block/role/delete against any
+  Administrator account (the authorization), the server actions refuse the
+  same targets before the request leaves (defense in depth), and Admin
+  records render a protection note instead of controls — so nobody can lock
+  `/admin` away from its owner. Activate stays open both sides (reversible,
+  no-op on an active account). Route tokens are the controllers'
   own (`api/admin/games`, `api/admin/AdminOrders`, `api/admin/AdminUsers`).
+  `requireAdmin()` also reads `status` — a Blocked admin's still-valid
+  token is denied server-side, because the profile read is the honest
+  source. Game form clamps rating 0–5 at the input; the games-table stock
+  chip turns accent only when a title is sold out (text always carries the
+  state).
 - **Known artifact:** `notFound()` renders the arena 404 under the PPR
   shell's 200 status (noindex + robots-disallowed; E2E asserts the copy,
   not the status).

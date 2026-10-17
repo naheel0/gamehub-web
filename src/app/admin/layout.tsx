@@ -54,14 +54,18 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         </div>
       </aside>
 
-      {/* mobile top bar — nav row joins when a second surface lands */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-line bg-bg/80 px-4 py-3 backdrop-blur-xl lg:hidden">
-        <span className="font-display text-xl leading-none tracking-[0.08em] text-heading uppercase">
-          GameHub <span className="text-accent">Admin</span>
-        </span>
-        <span className="inline-flex bg-accent px-2 py-0.5 font-mono text-[10px] tracking-[0.18em] text-bg uppercase">
-          {user.role}
-        </span>
+      {/* mobile/compact top bar — same sticky chrome; the section nav joins
+          inline so a tablet in the 641–1023px band still has every link */}
+      <header className="sticky top-0 z-40 border-b border-line bg-bg/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-xl leading-none tracking-[0.08em] text-heading uppercase">
+            GameHub <span className="text-accent">Admin</span>
+          </span>
+          <span className="inline-flex bg-accent px-2 py-0.5 font-mono text-[10px] tracking-[0.18em] text-bg uppercase">
+            {user.role}
+          </span>
+        </div>
+        <AdminNav orientation="horizontal" />
       </header>
 
       {/* tabindex -1: the skip link moves focus here, so Tab continues past the

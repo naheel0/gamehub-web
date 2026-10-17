@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, Minus, Plus, ShoppingCartSimple, Star } from "@/components/ui/icons";
 import { flyToCart } from "@/components/ui/FlyCoin";
 import { formatPrice } from "@/lib/format";
 import { announceCounts, storeCall } from "@/lib/store";
-import type { WishlistItem } from "@/lib/types";
+import { useWishlistIds, refreshWishlistIds } from "@/lib/wishlist-ids";
 
 /**
  * E-com buy box (Flpkart/Amazon grammar, Crimson Arena skin): title, star
@@ -15,7 +15,8 @@ import type { WishlistItem } from "@/lib/types";
  * stepper. Now live: Add to cart posts real quantity, Buy now hands off to
  * /checkout?buy= (the island places the order at pay time), and the heart
  * toggles the signed-in wishlist — all through our own relay routes (401 →
- * sign-in gate, never a fake action).
+ * sign-in gate, never a fake action). Wishlist state rides the shared
+ * store (lib/wishlist-ids): no private fetch duplicating the grid's.
  * Every mutation announces `counts:changed` so the navbar badges follow.
  */
 export default function BuyBox({
@@ -43,20 +44,8 @@ export default function BuyBox({
   const [cartBusy, setCartBusy] = useState(false);
   const [wishBusy, setWishBusy] = useState(false);
   // null = not known yet (signed out or lookup pending) — heart shows outline
-  const [saved, setSaved] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    storeCall<WishlistItem[]>("GET", "/api/wishlist").then((r) => {
-      if (live && r.ok && Array.isArray(r.data)) {
-        setSaved(r.data.some((i) => i.gameId === id));
-      }
-      // 401 / failure: stays null — clicking the heart gates honestly
-    });
-    return () => {
-      live = false;
-    };
-  }, [id]);
+  const savedIds = useWishlistIds();
+  const saved = savedIds?.has(id) === true;
 
   const gated = (what: string) =>
     setNote(
@@ -104,7 +93,7 @@ export default function BuyBox({
 
   const toggleWishlist = async () => {
     if (wishBusy) return;
-    const adding = !saved;
+    const adding = !(saved === true);
     setWishBusy(true);
     const r = await storeCall<{ message: string }>(
       adding ? "POST" : "DELETE",
@@ -116,7 +105,8 @@ export default function BuyBox({
       else setNote(r.message);
       return;
     }
-    setSaved(adding);
+    // the shared store re-reads on counts:changed — server truth, not local
+    refreshWishlistIds();
     announceCounts();
     setNote(adding ? `${name} saved to your wishlist.` : `${name} removed from your wishlist.`);
   };

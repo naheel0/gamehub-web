@@ -44,6 +44,7 @@ type Draft = {
   total: number;
   linkId: string;
   shortUrl: string;
+  ts?: number; // written on save; OrderConfirmation drops drafts older than 24h
 };
 
 type Field = "fullName" | "addressLine1" | "addressLine2" | "city" | "state" | "zipCode" | "country" | "phone";
@@ -250,6 +251,7 @@ export default function CheckoutClient({ mode, buyId, buyGame, buyQty }: Props) 
       total: Number(order.total),
       linkId: link.data.razorpayPaymentLinkId,
       shortUrl: link.data.shortUrl,
+      ts: Date.now(),
     };
     try {
       localStorage.setItem(PENDING_KEY, JSON.stringify(draft));

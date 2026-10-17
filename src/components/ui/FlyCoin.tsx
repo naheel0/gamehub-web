@@ -19,6 +19,9 @@ export function flyToCart(from: Element) {
   const SIZE = 28;
   const a = from.getBoundingClientRect();
   const b = target.getBoundingClientRect();
+  // a 0×0 rect means the control is display:none — an arc to nowhere reads
+  // as a glitch; let the badge pop alone tell the story
+  if (a.width === 0 || a.height === 0 || b.width === 0 || b.height === 0) return;
   const x0 = a.left + a.width / 2 - SIZE / 2;
   const y0 = a.top + a.height / 2 - SIZE / 2;
   const x1 = b.left + b.width / 2 - SIZE / 2;

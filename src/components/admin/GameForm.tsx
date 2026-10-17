@@ -151,6 +151,7 @@ export default function GameForm({
             type="number"
             step="0.1"
             min="0"
+            max="5"
             required
             value={v.rating}
             onChange={upd}

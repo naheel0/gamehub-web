@@ -27,6 +27,7 @@ export default function CartClient() {
   const [state, setState] = useState<State>({ k: "loading" });
   const [busy, setBusy] = useState<number | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [clearArmed, setClearArmed] = useState(false);
 
   const read = (r: StoreResult<CartItem[]>) => {
     if (r.ok) setState({ k: "ready", items: Array.isArray(r.data) ? r.data : [] });
@@ -92,6 +93,21 @@ export default function CartClient() {
       s.k === "ready" ? { ...s, items: s.items.filter((i) => i.gameId !== item.gameId) } : s,
     );
     setFlash(`${item.gameName} removed from your cart.`);
+  };
+
+  // ponytail: -1 is the clear-all busy sentinel (per-line busy is a gameId)
+  const clearAll = async () => {
+    if (busy !== null) return;
+    setBusy(-1);
+    const r = await storeCall<{ message: string }>("DELETE", "/api/cart");
+    setBusy(null);
+    setClearArmed(false);
+    if (!r.ok) {
+      fail(r.status, r.message);
+      return;
+    }
+    announceCounts();
+    setState({ k: "ready", items: [] });
   };
 
   if (state.k === "loading") {
@@ -188,6 +204,43 @@ export default function CartClient() {
             {flash}
           </p>
         )}
+
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="font-mono text-[11px] tracking-[0.16em] text-muted uppercase">
+            {totalCount} {totalCount === 1 ? "item" : "items"}
+          </p>
+          {clearArmed ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void clearAll()}
+                disabled={busy !== null}
+                className="inline-flex h-9 items-center gap-2 border border-accent px-3 font-mono text-[11px] tracking-[0.12em] text-accent uppercase transition-colors duration-200 hover:bg-accent hover:text-bg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash className="h-4 w-4" weight="bold" aria-hidden />
+                {busy === -1 ? "Clearing…" : "Confirm clear"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setClearArmed(false)}
+                disabled={busy !== null}
+                className="inline-flex h-9 items-center px-2 font-mono text-[11px] tracking-[0.12em] text-muted uppercase transition-colors duration-200 hover:text-heading disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setClearArmed(true)}
+              disabled={busy !== null}
+              className="inline-flex h-9 items-center gap-2 border border-line px-3 font-mono text-[11px] tracking-[0.12em] text-muted uppercase transition-colors duration-200 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash className="h-4 w-4" weight="bold" aria-hidden />
+              Clear cart
+            </button>
+          )}
+        </div>
 
         <ul className="grid gap-3 sm:gap-4">
           {items.map((item, i) => (

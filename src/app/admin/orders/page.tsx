@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import CatalogPagination from "@/components/catalog/CatalogPagination";
 import { adminOrdersPage } from "@/lib/admin/fetch";
 import { ORDER_STATUSES, type AdminOrderListDto } from "@/lib/admin/types";
+import { shortDate } from "@/lib/format";
 import { formatPrice } from "@/lib/format";
 
 // adminOrdersPage reads cookies per request — never prerendered
@@ -65,8 +66,6 @@ function SortTh({
 }
 
 const shortGuid = (id: string) => `${id.slice(0, 8)}…`;
-const listDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -168,6 +167,10 @@ export default async function AdminOrdersPage({
               </option>
             ))}
           </select>
+          {/* sort/dir don't ride the GET inputs — carry non-default sort state
+              across a search submit so results don't silently reorder */}
+          {sort !== "orderdate" && <input type="hidden" name="sort" value={sort} />}
+          {dir !== "desc" && <input type="hidden" name="dir" value={dir} />}
           <button
             type="submit"
             className="h-11 shrink-0 border border-line px-4 font-mono text-xs tracking-[0.14em] text-heading uppercase transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
@@ -275,7 +278,7 @@ export default async function AdminOrdersPage({
                       </div>
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs tabular-nums text-muted">
-                      {listDate(o.orderDate)}
+                      {shortDate(o.orderDate)}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono tabular-nums text-accent">
                       {formatPrice(o.total)}

@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { relay } from "@/lib/auth";
-import { GUID_RE, ORDER_STATUSES } from "@/lib/admin/types";
+import { adminGet } from "@/lib/admin/fetch";
+import { ADMIN_ROLE } from "@/lib/admin/session";
+import { GUID_RE, ORDER_STATUSES, ROLES, type AdminUserDetailDto } from "@/lib/admin/types";
 
 /** useActionState returns null (clean) or one honest failure message. */
 export type FormState = { err: string } | null;
@@ -103,4 +105,77 @@ export async function updateOrderStatus(_prev: FormState, formData: FormData): P
   if (res.status === 404) return { err: "That order no longer exists." };
   if (!res.ok) return { err: await failure(res) };
   redirect(`/admin/orders/${id}?status-updated=1`);
+}
+
+/**
+ * User verbs. Self-protection is enforced twice: the backend guard
+ * (AdminService — block/role/delete refuse any Administrator account; that
+ * is the authorization) and this frontend re-check, which loads the
+ * target's role first so an honest refusal stands even before the next
+ * backend deploy. Activate stays unguarded on both sides — reversible,
+ * and a no-op on an already-active admin.
+ */
+async function adminTargetGuard(id: number): Promise<string | null> {
+  const got = await adminGet<AdminUserDetailDto>(`/api/admin/AdminUsers/${id}`);
+  if (got.kind === "unreachable") return OFFLINE;
+  if (got.kind === "missing") return "That user no longer exists.";
+  // denied = expired/forbidden read; let the verb itself surface 401/403
+  if (got.kind !== "ok") return null;
+  return got.data.role === ADMIN_ROLE ? "Administrator accounts can't be changed here." : null;
+}
+
+export async function blockUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { err: "That user no longer exists." };
+  const guard = await adminTargetGuard(id);
+  if (guard) return { err: guard };
+
+  const res = await relay("PUT", `/api/admin/AdminUsers/${id}/block`, {});
+  if (res.status === 401) redirect(`/login?next=${encodeURIComponent(`/admin/users/${id}`)}`);
+  if (res.status === 403) redirect("/admin");
+  if (res.status === 404) return { err: "That user no longer exists." };
+  if (!res.ok) return { err: await failure(res) };
+  redirect(`/admin/users/${id}?blocked=1`);
+}
+
+export async function activateUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { err: "That user no longer exists." };
+
+  const res = await relay("PUT", `/api/admin/AdminUsers/${id}/activate`, {});
+  if (res.status === 401) redirect(`/login?next=${encodeURIComponent(`/admin/users/${id}`)}`);
+  if (res.status === 403) redirect("/admin");
+  if (res.status === 404) return { err: "That user no longer exists." };
+  if (!res.ok) return { err: await failure(res) };
+  redirect(`/admin/users/${id}?activated=1`);
+}
+
+export async function updateUserRole(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = Number(formData.get("id"));
+  const role = String(formData.get("role") ?? "");
+  if (!Number.isInteger(id) || id <= 0) return { err: "That user no longer exists." };
+  if (!(ROLES as readonly string[]).includes(role)) return { err: "Pick a valid role." };
+  const guard = await adminTargetGuard(id);
+  if (guard) return { err: guard };
+
+  const res = await relay("PUT", `/api/admin/AdminUsers/${id}/role`, { role });
+  if (res.status === 401) redirect(`/login?next=${encodeURIComponent(`/admin/users/${id}`)}`);
+  if (res.status === 403) redirect("/admin");
+  if (res.status === 404) return { err: "That user no longer exists." };
+  if (!res.ok) return { err: await failure(res) };
+  redirect(`/admin/users/${id}?role-updated=1`);
+}
+
+export async function deleteUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { err: "That user no longer exists." };
+  const guard = await adminTargetGuard(id);
+  if (guard) return { err: guard };
+
+  const res = await relay("DELETE", `/api/admin/AdminUsers/${id}`);
+  if (res.status === 401) redirect(`/login?next=${encodeURIComponent("/admin/users")}`);
+  if (res.status === 403) redirect("/admin");
+  if (res.status === 404) return { err: "That user no longer exists." };
+  if (!res.ok) return { err: await failure(res) };
+  redirect("/admin/users?deleted=1");
 }

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "@/components/ui/icons";
+import Flash from "@/components/admin/Flash";
+import UserControls from "@/components/admin/UserControls";
 import { adminGet } from "@/lib/admin/fetch";
+import { ADMIN_ROLE } from "@/lib/admin/session";
 import type { AdminUserDetailDto } from "@/lib/admin/types";
 import { formatPrice } from "@/lib/format";
 
@@ -14,19 +17,22 @@ export const metadata: Metadata = { title: "User — Admin" };
 const labelCls = "font-mono text-[10px] tracking-[0.16em] text-muted uppercase";
 
 /**
- * Read-only account record. The backend also exposes four verbs here
- * (PUT block / PUT activate / PUT role, DELETE) — deliberately not wired
- * into this surface yet: blocking, demoting or deleting a real account is
- * a destructive admin verb gated on the site owner's call, and the UI must
- * additionally self-protect the signed-in admin from locking themselves
- * out. Reads only until that lands.
+ * Account record plus account control. The four backend verbs here
+ * (PUT block / PUT activate / PUT role, DELETE) are wired with self-protection
+ * on both sides: the backend guard (AdminService) refuses block/role/delete
+ * against any Administrator account, and the server actions re-check the
+ * target's role before the request leaves — so the signed-in admin can never
+ * lock themselves out of /admin. On an Admin record the controls render as a
+ * protection note instead.
  */
 export default async function AdminUserDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ blocked?: string; activated?: string; "role-updated"?: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   // ids are ints on this route — a non-numeric id can never be a user, 404
   // locally, don't dial out
   if (!/^\d+$/.test(id)) notFound();
@@ -65,6 +71,10 @@ export default async function AdminUserDetailPage({
         </Link>
       </div>
 
+      {sp["blocked"] && <div className="mt-4"><Flash msg="User blocked." /></div>}
+      {sp["activated"] && <div className="mt-4"><Flash msg="User activated." /></div>}
+      {sp["role-updated"] && <div className="mt-4"><Flash msg="Role updated." /></div>}
+
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <section aria-label="Account" className="border border-line bg-surface/60 p-5 sm:p-6">
           <p className={labelCls}>Account</p>
@@ -102,6 +112,20 @@ export default async function AdminUserDetailPage({
           </dl>
         </section>
       </div>
+
+      <section aria-label="Account control" className="mt-6 border border-line bg-surface/60 p-5 sm:p-6">
+        <p className={labelCls}>Account control</p>
+        {u.role === ADMIN_ROLE ? (
+          <p className="mt-3 max-w-xl text-sm text-text">
+            Administrator accounts are protected — they can&apos;t be blocked, demoted or
+            deleted from this console, so nobody can lock it away from its owner.
+          </p>
+        ) : (
+          <div className="mt-4">
+            <UserControls id={u.id} status={u.status} role={u.role} name={name} />
+          </div>
+        )}
+      </section>
     </div>
   );
 }

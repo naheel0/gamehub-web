@@ -16,7 +16,8 @@ export default function ContactPage() {
       <h1 className="mt-3 font-display text-5xl uppercase">Contact us</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         A question about an order, an account or the store itself — this is the page
-        for it. Every message lands in our support inbox.
+        for it. The form below composes a message straight to our support inbox,
+        sent from your own email app.
       </p>
 
       <Section title="What we can help with">
@@ -74,11 +75,12 @@ export default function ContactPage() {
           Send a message
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-text">
-          Use the form, or email{" "}
+          The form opens your email app with everything filled in — hit send and it
+          arrives as a normal mail to{" "}
           <a href="mailto:support@gamehub.com" className={inlineLink}>
             support@gamehub.com
-          </a>{" "}
-          directly.
+          </a>
+          .
         </p>
         <div className="mt-5">
           <ContactForm />

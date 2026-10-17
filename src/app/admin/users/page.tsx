@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import CatalogPagination from "@/components/catalog/CatalogPagination";
+import Flash from "@/components/admin/Flash";
 import { adminUsersPage } from "@/lib/admin/fetch";
 import { ACCOUNT_STATUSES, ROLES, type AdminUserListDto } from "@/lib/admin/types";
+import { shortDate } from "@/lib/format";
 
 // adminUsersPage reads cookies per request — never prerendered
 export const instant = false;
@@ -22,6 +24,7 @@ type Search = {
   page?: string;
   status?: string;
   role?: string;
+  deleted?: string;
 };
 
 /** Sortable header: real link, URL carries sort+dir, page resets (aria-sort
@@ -64,8 +67,6 @@ function SortTh({
   );
 }
 
-const joinedDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
 export default async function AdminUsersPage({
   searchParams,
@@ -187,6 +188,10 @@ export default async function AdminUsersPage({
               </option>
             ))}
           </select>
+          {/* sort/dir don't ride the GET inputs — carry non-default sort state
+              across a search submit so results don't silently reorder */}
+          {sort !== "createdat" && <input type="hidden" name="sort" value={sort} />}
+          {dir !== "desc" && <input type="hidden" name="dir" value={dir} />}
           <button
             type="submit"
             className="h-11 shrink-0 border border-line px-4 font-mono text-xs tracking-[0.14em] text-heading uppercase transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
@@ -203,6 +208,8 @@ export default async function AdminUsersPage({
           )}
         </form>
       </div>
+
+      {sp["deleted"] && <div className="mt-4"><Flash msg="User deleted." /></div>}
 
       <p aria-live="polite" className="mt-4 font-mono text-xs text-muted">
         {totalCount} {totalCount === 1 ? "user" : "users"}
@@ -290,7 +297,7 @@ export default async function AdminUsersPage({
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs tabular-nums text-muted">
-                      {joinedDate(u.createdAt)}
+                      {shortDate(u.createdAt)}
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <Link

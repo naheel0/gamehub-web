@@ -137,7 +137,7 @@ export default function ProfileClient() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
-            href="/login"
+            href="/login?next=/profile"
             className="inline-flex h-11 items-center bg-accent px-6 font-semibold text-bg transition-transform duration-150 hover:-translate-y-0.5"
           >
             Sign in
