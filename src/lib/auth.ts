@@ -155,6 +155,11 @@ export async function backendFetch(
   if (init?.stream) {
     if (init.contentType) headers["Content-Type"] = init.contentType;
     body = init.body as ReadableStream;
+  } else if (init?.body instanceof FormData) {
+    // multipart admin upload: fetch sets the boundary itself (a hand-set
+    // content-type would break it); re-serializable, so unlike a raw stream
+    // this body can still ride the transparent refresh retry in relay()
+    body = init.body;
   } else if (init?.body !== undefined) {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(init.body);
@@ -288,7 +293,11 @@ export async function relay(
   }
   if (!res) return NextResponse.json({ message: OFFLINE_MSG }, { status: 502 });
 
-  const response = new NextResponse(await res.text(), {
+  // 204/205 are null-body statuses — handing them an empty string body
+  // throws (TypeError: Invalid response status code), which killed the
+  // admin delete relay the first time it ran
+  const text = res.status === 204 || res.status === 205 ? null : await res.text();
+  const response = new NextResponse(text, {
     status: res.status,
     headers: { "Content-Type": "application/json" },
   });

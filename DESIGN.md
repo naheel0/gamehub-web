@@ -429,7 +429,56 @@ the **shadcn MCP** (registry view + audit checklist):
   policy version + timestamp — is written to `localStorage.gh_terms`).
   `CookieConsent` mounts once in the root layout (see Components).
 
+## Admin appendix
+
+`/admin` is an appendix to Crimson Arena, not a second brand: same tokens,
+no new palette, no storefront nav leak (entry is the bare URL or the
+Admin-only row on `/profile`). `robots.txt` disallows `/admin`; pages carry
+`robots: {index: false}` and `export const instant = false` (every admin
+read touches cookies — never prerendered). `requireAdmin()` lives in the
+layout (tri-state: admin / denied→`/login?next=` / unreachable→honest
+error); server actions re-assert by relaying to `[Authorize(Roles="Admin")]`
+endpoints — the backend is the authorization, never the UI.
+
+- **Shell:** left rail on desktop (wordmark + `AdminNav` + session footer
+  with email and ADMIN chip), top band under 640px. `AdminNav` marks the
+  active section with the leaning crimson tick + `aria-current`.
+- **Type:** the same three voices at working sizes — display h1 (list
+  `5xl/6xl`, record `4xl/5xl`), mono for every datum (ids, dates, money,
+  chips, labels at `10–11px tracking-[0.16em|0.3em] uppercase`), Barlow
+  body. Eyebrows are accent mono; section labels are muted mono.
+- **Accent discipline (unchanged):** CTAs, links, prices/`Total spent`,
+  sort glyph, armed-confirm state, error-banner border. Role/status/stock
+  chips stay `border-line text-heading` — state is never a call to action.
+- **Tables:** all state in the URL (`?q&sort&dir&page` + entity filters),
+  defaults omitted; sortable headers are real links with `aria-sort` +
+  glyph; `CatalogPagination` reuse; `contain-paint` + `min-w` scroller so
+  table width never scrolls the 390px root; distinct unfiltered vs
+  filtered empty states with Clear; out-of-range page redirects to page 1
+  of the same filtered query.
+- **Forms & mutations:** AuthForm input language (`border-line`, accent
+  focus shadow). Reads are RSC; writes are server actions with PRG +
+  `Flash` deal-in banners. Rejected submits keep typed values (controlled
+  fields); GET-form echoes use key-remount (defaultValue doesn't rewrite
+  on client-side navigation). Two-step armed confirms (`onSubmit` guard,
+  submit stays `type="submit"`, arm label names the target) for
+  destructive verbs; order status is allowlisted to the backend enum
+  before it leaves.
+- **Deliberate absences:** backend `DELETE` order is not surfaced
+  (cancel by status, never erase); user block/activate/role/delete are
+  unwired pending the owner's call plus self-protection (an admin cannot
+  block, demote or delete themselves). Route tokens are the controllers'
+  own (`api/admin/games`, `api/admin/AdminOrders`, `api/admin/AdminUsers`).
+- **Known artifact:** `notFound()` renders the arena 404 under the PPR
+  shell's 200 status (noindex + robots-disallowed; E2E asserts the copy,
+  not the status).
+
 ## Known ceiling
 
 - Gallery rail swaps the hero client-side; no deep-linkable image index
   (no route/query for it) — fine until shareable gallery states matter.
+- Admin: populated orders branches (rows, detail, status form) are
+  code-review-only until a real order exists — the prod DB holds zero and
+  rows are never fabricated. Login success card's handoff button reads
+  "Enter the store" even when `?next=` points at /admin — copy nit, the
+  destination is honored.

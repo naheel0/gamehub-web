@@ -80,6 +80,10 @@ export type DashboardStatsDto = {
   last7DaysSales: DailySales[];
 };
 
+/** Canonical GUID shape — the backend routes constrain {orderId:guid}, so a
+ *  malformed id must 404 locally before any request is made. */
+export const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** GameHub.Domain/Enums — backend-validated, exact member names. */
 export const ORDER_STATUSES = [
   "Pending",

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import CatalogPagination from "@/components/catalog/CatalogPagination";
+import Flash from "@/components/admin/Flash";
 import { adminGamesPage } from "@/lib/admin/fetch";
 import { formatPrice } from "@/lib/format";
 
@@ -16,7 +17,14 @@ const SORT_COLS = ["name", "price", "rating"] as const;
 type SortCol = (typeof SORT_COLS)[number];
 type Dir = "asc" | "desc";
 
-type Search = { q?: string; sort?: string; dir?: string; page?: string };
+type Search = {
+  q?: string;
+  sort?: string;
+  dir?: string;
+  page?: string;
+  deleted?: string;
+  created?: string;
+};
 
 /** Sortable header: real link, URL carries sort+dir, page resets (aria-sort
  *  announces direction — the glyph is decoration, never the only signal). */
@@ -45,7 +53,7 @@ function SortTh({
     >
       <Link
         href={hrefFor(col, nextDir)}
-        className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-accent"
+        className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-accent active:text-accent"
       >
         {label}
         {active && (
@@ -69,6 +77,11 @@ export default async function AdminGamesPage({
   const dir: Dir = sp.dir === "desc" ? "desc" : "asc";
   const pageRaw = Number(sp.page);
   const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  const flash = sp.deleted
+    ? "Game deleted."
+    : sp.created
+      ? "Game created."
+      : undefined;
 
   // all state lives in the URL; defaults stay out of it
   const paramsFor = (opts?: { q?: string; sort?: SortCol; dir?: Dir; page?: number }) => {
@@ -120,20 +133,21 @@ export default async function AdminGamesPage({
             id="games-q"
             type="search"
             name="q"
+            key={q}
             defaultValue={q}
             placeholder="Search titles…"
-            className="h-10 w-52 border border-line bg-bg px-3 font-mono text-sm text-text placeholder:text-muted"
+            className="h-11 w-52 border border-line bg-bg px-3 font-mono text-sm text-text placeholder:text-muted"
           />
           <button
             type="submit"
-            className="h-10 shrink-0 border border-line px-4 font-mono text-xs tracking-[0.14em] text-heading uppercase transition-colors duration-200 hover:border-accent hover:text-accent"
+            className="h-11 shrink-0 border border-line px-4 font-mono text-xs tracking-[0.14em] text-heading uppercase transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
           >
             Search
           </button>
           {q && (
             <Link
               href={paramsFor({ q: "" })}
-              className="font-mono text-xs text-muted underline underline-offset-4 transition-colors duration-200 hover:text-accent"
+              className="font-mono text-xs text-muted underline underline-offset-4 transition-colors duration-200 hover:text-accent active:text-accent"
             >
               Clear
             </Link>
@@ -141,17 +155,31 @@ export default async function AdminGamesPage({
         </form>
       </div>
 
-      <p className="mt-4 font-mono text-xs text-muted">
-        {totalCount} {totalCount === 1 ? "title" : "titles"}
-        {q ? ` matching “${q}”` : ""}
-      </p>
+      {flash && (
+        <div className="mt-6">
+          <Flash msg={flash} />
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <p aria-live="polite" className="font-mono text-xs text-muted">
+          {totalCount} {totalCount === 1 ? "title" : "titles"}
+          {q ? ` matching “${q}”` : ""}
+        </p>
+        <Link
+          href="/admin/games/new"
+          className="inline-flex h-11 items-center bg-accent px-5 font-display text-base tracking-[0.04em] text-bg uppercase transition duration-200 hover:opacity-90 active:scale-[0.98]"
+        >
+          New game
+        </Link>
+      </div>
 
       {items.length === 0 ? (
         <div className="mt-6 border border-line bg-surface/60 p-8 text-center">
           <p className="font-display text-2xl text-heading uppercase">No games match{q ? ` “${q}”` : ""}</p>
           <Link
             href="/admin/games"
-            className="mt-5 inline-flex h-10 items-center border border-line px-5 font-mono text-xs tracking-[0.14em] text-heading uppercase transition-colors duration-200 hover:border-accent hover:text-accent"
+            className="mt-5 inline-flex h-11 items-center border border-line px-5 font-mono text-xs tracking-[0.14em] text-heading uppercase transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
           >
             Clear search
           </Link>
@@ -241,7 +269,7 @@ export default async function AdminGamesPage({
                     <td className="px-4 py-2.5 text-right">
                       <Link
                         href={`/admin/games/${g.id}`}
-                        className="font-mono text-xs tracking-[0.1em] text-heading uppercase underline decoration-accent decoration-2 underline-offset-4 transition-colors duration-200 hover:text-accent"
+                        className="font-mono text-xs tracking-[0.1em] text-heading uppercase underline decoration-accent decoration-2 underline-offset-4 transition-colors duration-200 hover:text-accent active:text-accent"
                       >
                         Edit
                       </Link>

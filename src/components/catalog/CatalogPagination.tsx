@@ -27,7 +27,7 @@ export default function CatalogPagination({
       {page > 1 ? (
         <Link
           href={hrefFor(page - 1)}
-          className="flex h-11 w-11 items-center justify-center border border-line text-muted transition-colors duration-200 hover:border-accent hover:text-accent"
+          className="flex h-11 w-11 items-center justify-center border border-line text-muted transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
         >
           <CaretLeft className="h-4 w-4" />
           <span className="sr-only">Previous page</span>
@@ -51,7 +51,7 @@ export default function CatalogPagination({
           <Link
             key={n}
             href={hrefFor(n)}
-            className="flex h-11 min-w-11 items-center justify-center border border-line font-mono text-sm tabular-nums text-muted transition-colors duration-200 hover:border-accent hover:text-accent"
+            className="flex h-11 min-w-11 items-center justify-center border border-line font-mono text-sm tabular-nums text-muted transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
           >
             {n}
           </Link>
@@ -61,7 +61,7 @@ export default function CatalogPagination({
       {page < totalPages ? (
         <Link
           href={hrefFor(page + 1)}
-          className="flex h-11 w-11 items-center justify-center border border-line text-muted transition-colors duration-200 hover:border-accent hover:text-accent"
+          className="flex h-11 w-11 items-center justify-center border border-line text-muted transition duration-200 hover:border-accent hover:text-accent active:scale-[0.98]"
         >
           <CaretRight className="h-4 w-4" />
           <span className="sr-only">Next page</span>

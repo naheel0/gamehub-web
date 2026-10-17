@@ -27,7 +27,20 @@ const nextConfig: NextConfig = {
         hostname: "shared.fastly.steamstatic.com",
         pathname: "/store_item_assets/**",
       },
+      {
+        // admin uploads: CloudinaryStorageService returns result.SecureUrl —
+        // https://res.cloudinary.com/<cloud>/image/upload/...
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
+  },
+  experimental: {
+    serverActions: {
+      // default 1MB clips real cover art — multipart overhead lives inside this cap
+      bodySizeLimit: "4mb",
+    },
   },
 };
 

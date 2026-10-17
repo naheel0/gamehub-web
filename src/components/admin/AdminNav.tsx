@@ -7,6 +7,8 @@ import { usePathname } from "next/navigation";
 const ITEMS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/games", label: "Games" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/users", label: "Users" },
 ];
 
 /** Rail nav for the admin shell. Active = crimson leaning tick + heading
